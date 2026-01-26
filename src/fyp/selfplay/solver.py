@@ -34,6 +34,17 @@ except ImportError:
     create_patchtst_config = None
     logger.warning("PatchTST not available. Solver will use fallback methods.")
 
+# Import frequency-enhanced model for improved performance
+try:
+    from fyp.models.frequency_enhanced import (
+        FrequencyEnhancedForecaster,
+        create_frequency_enhanced_config,
+    )
+except ImportError:
+    FrequencyEnhancedForecaster = None
+    create_frequency_enhanced_config = None
+    logger.debug("FrequencyEnhancedForecaster not available.")
+
 
 class SolverAgent:
     """PatchTST-based forecasting agent for self-play training."""
@@ -45,6 +56,7 @@ class SolverAgent:
         device: str = "cpu",
         pretrain_epochs: int = 20,
         use_samples: bool = False,
+        use_frequency_enhanced: bool = True,  # NEW: Use frequency-enhanced model
     ):
         """Initialize solver with PatchTST architecture.
 
@@ -54,10 +66,17 @@ class SolverAgent:
             device: Torch device
             pretrain_epochs: Supervised pretraining epochs on historical data
             use_samples: Whether to use sample data for fast testing
+            use_frequency_enhanced: Whether to use FrequencyEnhancedPatchTST (default True)
         """
+        self.use_frequency_enhanced = use_frequency_enhanced
+        
         # Initialize model configuration
         if model_config is None:
-            if create_patchtst_config is not None:
+            # Use frequency-enhanced config if enabled and available
+            if use_frequency_enhanced and create_frequency_enhanced_config is not None:
+                model_config = create_frequency_enhanced_config(use_samples=use_samples)
+                logger.info("Using FrequencyEnhancedPatchTST configuration")
+            elif create_patchtst_config is not None:
                 model_config = create_patchtst_config(use_samples=use_samples)
             else:
                 # Fallback config
@@ -79,8 +98,28 @@ class SolverAgent:
         self.use_samples = use_samples
         self.forecast_horizon = model_config.get("forecast_horizon", 48)
 
-        # Initialize PatchTST forecaster if available
-        if PatchTSTForecaster is not None:
+        # Initialize forecaster - prefer frequency-enhanced if available and enabled
+        if use_frequency_enhanced and FrequencyEnhancedForecaster is not None:
+            logger.info("Initializing FrequencyEnhancedForecaster for improved periodicity capture")
+            self.model = FrequencyEnhancedForecaster(
+                seq_len=model_config.get("seq_len", 96),
+                patch_len=model_config.get("patch_len", 16),
+                d_model=model_config.get("d_model", 128),
+                n_heads=model_config.get("n_heads", 8),
+                n_layers=model_config.get("n_layers", 4),
+                forecast_horizon=self.forecast_horizon,
+                quantiles=model_config.get("quantiles", [0.1, 0.5, 0.9]),
+                learning_rate=model_config.get("learning_rate", 1e-3),
+                max_epochs=model_config.get("max_epochs", 50),
+                batch_size=model_config.get("batch_size", 32),
+                early_stopping_patience=model_config.get("early_stopping_patience", 10),
+                use_frequency_branch=model_config.get("use_frequency_branch", True),
+                use_multiscale=model_config.get("use_multiscale", True),
+                freq_weight=model_config.get("freq_weight", 0.3),
+                device=device,
+            )
+        elif PatchTSTForecaster is not None:
+            logger.info("Initializing standard PatchTSTForecaster")
             self.model = PatchTSTForecaster(
                 patch_len=model_config.get("patch_len", 16),
                 d_model=model_config.get("d_model", 128),
@@ -97,7 +136,7 @@ class SolverAgent:
         else:
             self.model = None
             logger.warning(
-                "PatchTSTForecaster not available. Using fallback prediction methods."
+                "No forecaster available. Using fallback prediction methods."
             )
 
         # Training state
@@ -108,6 +147,7 @@ class SolverAgent:
         # Pretrain on historical data if available
         if pretrain_epochs > 0 and historical_data_path:
             self._pretrain_on_historical_data(historical_data_path, pretrain_epochs)
+
 
     def _pretrain_on_historical_data(
         self, data_path: str, pretrain_epochs: int
