@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 - **Phase:** 1 of 4 (GNN Verifier Foundation) - COMPLETE
-- **Plan:** 3 of 3 (Test Suite)
-- **Status:** Phase complete
-- **Last activity:** 2026-01-27 - Completed 01-03-PLAN.md
-- **Progress:** [###.......] 30%
+- **Plan:** 4 of 4 (Synthetic Dataset - gap closure)
+- **Status:** Phase 1 complete with gap closure
+- **Last activity:** 2026-01-27 - Completed 01-04-PLAN.md (gap closure)
+- **Progress:** [####......] 40%
 
 ## Performance Metrics
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| Plans completed | 3 | 01-01, 01-02, 01-03 |
+| Plans completed | 4 | 01-01, 01-02, 01-03, 01-04 |
 | Requirements done | 1/10 | GNN-based Verifier (complete for Phase 1) |
 | Phases done | 1/4 | Phase 1 complete |
 
@@ -37,6 +37,9 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 | 1D-Conv temporal encoding | Faster than LSTM, better local pattern capture | 01-02 |
 | 35ms latency threshold for tests | Allows environment variance; target is 30ms | 01-03 |
 | 95% test coverage target | Practical coverage excluding __repr__ methods | 01-03 |
+| Pre-generate samples in __init__ | Ensures reproducibility and consistency | 01-04 |
+| 10-30% nodes affected per anomaly | Realistic anomaly spread without overwhelming signal | 01-04 |
+| 2-hop cascade with 0.7 decay | Simulates realistic cascade effects | 01-04 |
 
 ## Blockers
 
@@ -53,11 +56,14 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 - Sigmoid output for [0,1] anomaly scores
 - pytest fixtures for reusable test data
 - torch.inference_mode() for test performance
+- AnomalyType enum for type-safe anomaly specification
+- Seeded random generator for reproducible synthetic data
 
 ### Open Questions
 - ~~SSEN metadata schema for graph construction~~ RESOLVED: Works with primary_substation_id, secondary_substation_id, lv_feeder_id columns
 - ~~GNN hyperparameters~~ RESOLVED: 64 hidden, 3 layers, 4 heads, latency ~30ms
 - ~~Test coverage target~~ RESOLVED: 95% achieved
+- ~~Synthetic training data~~ RESOLVED: SyntheticAnomalyDataset with 5 anomaly types
 
 ### Deferred Items
 - Uncertainty quantification (UQ-01, UQ-02) - v2
@@ -71,11 +77,12 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 - 2026-01-27: Completed 01-01 Graph Construction Pipeline (3 tasks, 8 min)
 - 2026-01-27: Completed 01-02 GAT Verifier Model (3 tasks, 6 min)
 - 2026-01-27: Completed 01-03 Test Suite (3 tasks, 6 min) - Phase 1 complete
+- 2026-01-27: Completed 01-04 Synthetic Dataset (2 tasks, 6 min) - Gap closure
 
 ## Session Continuity
 
 **Last session:** 2026-01-27
-**Stopped at:** Completed 01-03-PLAN.md (Phase 1 complete)
+**Stopped at:** Completed 01-04-PLAN.md (gap closure plan)
 **Resume file:** None
 **Next action:** Begin Phase 2 planning (Self-Play Generator)
 
