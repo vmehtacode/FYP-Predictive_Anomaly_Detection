@@ -27,7 +27,7 @@ classifiers = [
 "Changelog" = "https://github.com/vatsalmehta/FYP-Predictive_Anomaly_Detection/blob/main/CHANGELOG.md"
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.13"
+python = ">=3.11,<3.14"
 # Data manipulation and analysis
 polars = "^0.20.0"
 pyarrow = "^14.0.0"
@@ -60,7 +60,7 @@ psutil = "^5.9.0"
 
 # Time series specific
 tslearn = "^0.6.0"
-sktime = "^0.24.0"
+sktime = ">=0.34.0"
 transformers = "^4.57.1"
 loguru = "^0.7.3"
 torch-geometric = "^2.7.0"
