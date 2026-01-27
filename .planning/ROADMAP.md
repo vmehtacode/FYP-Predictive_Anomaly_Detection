@@ -12,6 +12,13 @@
 
 **Requirements:** GNN-01, GNN-02
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Setup PyG + Graph Builder (SSEN metadata to PyG Data)
+- [ ] 01-02-PLAN.md — Temporal Encoder + GAT Verifier Model
+- [ ] 01-03-PLAN.md — Unit Tests + Integration Verification
+
 **Success Criteria:**
 1. Graph construction pipeline transforms SSEN metadata into PyTorch Geometric Data batches with nodes (households, feeders, substations) and edges (physical topology)
 2. GNN model (GAT/GraphSAGE + temporal layer) processes graph-structured input and outputs per-node anomaly scores
@@ -75,7 +82,7 @@
 
 | Phase | Name | Status | Requirements | Coverage |
 |-------|------|--------|--------------|----------|
-| 1 | GNN Verifier Foundation | Not started | GNN-01, GNN-02 | 2/10 |
+| 1 | GNN Verifier Foundation | Planned | GNN-01, GNN-02 | 2/10 |
 | 2 | Hybrid Verifier Integration | Not started | GNN-03, ENS-01, ENS-02 | 3/10 |
 | 3 | Graph-Aware Proposer | Not started | SELF-01, SELF-02 | 2/10 |
 | 4 | Evaluation Framework | Not started | EVAL-01, EVAL-02, EVAL-03 | 3/10 |
