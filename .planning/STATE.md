@@ -5,23 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** Detect anomalies in energy distribution networks without labeled data, using physics constraints and self-play learned patterns on graph-structured grid data
-**Current focus:** Phase 2 - Self-Play Generator
+**Current focus:** Phase 1 COMPLETE - Ready for Phase 2 (Self-Play Generator)
 
 ## Current Position
 
 - **Phase:** 1 of 4 (GNN Verifier Foundation) - COMPLETE
-- **Plan:** 5 of 5 (Training Pipeline - gap closure)
-- **Status:** Phase 1 complete with all gap closures
-- **Last activity:** 2026-01-27 - Completed 01-05-PLAN.md (training pipeline)
-- **Progress:** [#####.....] 50%
+- **Plan:** 6 of 6 (Training & Evaluation Scripts - gap closure) - COMPLETE
+- **Status:** Phase 1 fully complete with all success criteria met
+- **Last activity:** 2026-01-27 - Completed 01-06-PLAN.md (training/evaluation scripts + trained model)
+- **Progress:** [######....] 60%
 
 ## Performance Metrics
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| Plans completed | 5 | 01-01, 01-02, 01-03, 01-04, 01-05 |
-| Requirements done | 1/10 | GNN-based Verifier (complete for Phase 1) |
+| Plans completed | 6 | 01-01, 01-02, 01-03, 01-04, 01-05, 01-06 |
+| Requirements done | 1/10 | GNN-based Verifier (Phase 1 complete) |
 | Phases done | 1/4 | Phase 1 complete |
+| Model accuracy | 98.33% | On held-out test set (target was 85%) |
 
 ## Key Decisions
 
@@ -44,6 +45,9 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 | Adam lr=1e-3, weight_decay=1e-4 | Standard for GNN training, good convergence | 01-05 |
 | Early stopping patience=10 | Prevents overfitting on synthetic data | 01-05 |
 | Prediction threshold=0.5 | Standard binary classification threshold | 01-05 |
+| sklearn.metrics for evaluation | Reliable precision/recall/F1 computation | 01-06 |
+| 2000 training samples sufficient | Achieved 98.33% accuracy, no need for more | 01-06 |
+| Model converged at epoch 53 | Early stopping triggered, best at epoch 34 | 01-06 |
 
 ## Blockers
 
@@ -65,6 +69,8 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 - BCELoss for binary anomaly classification
 - torch_geometric.loader.DataLoader for graph batching
 - Checkpoint format: epoch, model_state_dict, optimizer_state_dict, metrics
+- CLI scripts with argparse for all hyperparameters
+- Evaluation JSON format: accuracy, precision, recall, F1, confusion matrix
 
 ### Open Questions
 - ~~SSEN metadata schema for graph construction~~ RESOLVED: Works with primary_substation_id, secondary_substation_id, lv_feeder_id columns
@@ -72,11 +78,23 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 - ~~Test coverage target~~ RESOLVED: 95% achieved
 - ~~Synthetic training data~~ RESOLVED: SyntheticAnomalyDataset with 5 anomaly types
 - ~~Training loop~~ RESOLVED: GNNTrainer with BCELoss, early stopping, checkpointing
+- ~~Trained model accuracy~~ RESOLVED: 98.33% on held-out test (well above 85% target)
 
 ### Deferred Items
 - Uncertainty quantification (UQ-01, UQ-02) - v2
 - Elexon BMRS live integration (DATA-01, DATA-02) - v2
 - FYP report and presentation (ACAD-01, ACAD-02) - v2
+
+## Phase 1 Success Criteria Status
+
+| Criterion | Status |
+|-----------|--------|
+| GridGraphBuilder transforms SSEN metadata to PyG Data | COMPLETE (01-01) |
+| GATVerifier with GATv2Conv and oversmoothing prevention | COMPLETE (01-02) |
+| Training/evaluation scripts with >85% accuracy model | COMPLETE (01-06, 98.33%) |
+| SyntheticAnomalyDataset generates labeled training data | COMPLETE (01-04) |
+| GNNTrainer with BCELoss, early stopping, checkpointing | COMPLETE (01-05) |
+| Comprehensive test suite with >95% coverage | COMPLETE (01-03) |
 
 ## Recent Activity
 
@@ -87,11 +105,12 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 - 2026-01-27: Completed 01-03 Test Suite (3 tasks, 6 min) - Phase 1 complete
 - 2026-01-27: Completed 01-04 Synthetic Dataset (2 tasks, 6 min) - Gap closure
 - 2026-01-27: Completed 01-05 Training Pipeline (2 tasks, 5 min) - Gap closure
+- 2026-01-27: Completed 01-06 Training/Evaluation Scripts (3 tasks, 11 min) - Gap closure, PHASE 1 COMPLETE
 
 ## Session Continuity
 
 **Last session:** 2026-01-27
-**Stopped at:** Completed 01-05-PLAN.md (training pipeline)
+**Stopped at:** Completed 01-06-PLAN.md (training/evaluation scripts + trained model)
 **Resume file:** None
 **Next action:** Begin Phase 2 planning (Self-Play Generator)
 
