@@ -63,6 +63,7 @@ tslearn = "^0.6.0"
 sktime = "^0.24.0"
 transformers = "^4.57.1"
 loguru = "^0.7.3"
+torch-geometric = "^2.7.0"
 
 [tool.poetry.group.dev.dependencies]
 # Code quality
