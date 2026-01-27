@@ -12,10 +12,12 @@ Architecture:
 
 Key Components:
     - GridGraphBuilder: Transforms SSEN metadata into PyG Data objects
-    - (Future) GATVerifier: GAT-based anomaly scoring model
-    - (Future) TemporalEncoder: Encodes time-window features per node
+    - TemporalEncoder: 1D-Conv encoder for time-window features per node
+    - GATVerifier: GAT-based anomaly scoring model with oversmoothing prevention
 """
 
+from fyp.gnn.gat_verifier import GATVerifier
 from fyp.gnn.graph_builder import GridGraphBuilder
+from fyp.gnn.temporal_encoder import TemporalEncoder
 
-__all__ = ["GridGraphBuilder"]
+__all__ = ["GridGraphBuilder", "TemporalEncoder", "GATVerifier"]
