@@ -14,10 +14,19 @@ Key Components:
     - GridGraphBuilder: Transforms SSEN metadata into PyG Data objects
     - TemporalEncoder: 1D-Conv encoder for time-window features per node
     - GATVerifier: GAT-based anomaly scoring model with oversmoothing prevention
+    - SyntheticAnomalyDataset: Generates labeled training data with grid anomalies
+    - AnomalyType: Enum of supported anomaly types (SPIKE, DROPOUT, CASCADE, etc.)
 """
 
 from fyp.gnn.gat_verifier import GATVerifier
 from fyp.gnn.graph_builder import GridGraphBuilder
+from fyp.gnn.synthetic_dataset import AnomalyType, SyntheticAnomalyDataset
 from fyp.gnn.temporal_encoder import TemporalEncoder
 
-__all__ = ["GridGraphBuilder", "TemporalEncoder", "GATVerifier"]
+__all__ = [
+    "GridGraphBuilder",
+    "TemporalEncoder",
+    "GATVerifier",
+    "SyntheticAnomalyDataset",
+    "AnomalyType",
+]
