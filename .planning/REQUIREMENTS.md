@@ -71,22 +71,22 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| GNN-01 | TBD | Pending |
-| GNN-02 | TBD | Pending |
-| GNN-03 | TBD | Pending |
-| SELF-01 | TBD | Pending |
-| SELF-02 | TBD | Pending |
-| ENS-01 | TBD | Pending |
-| ENS-02 | TBD | Pending |
-| EVAL-01 | TBD | Pending |
-| EVAL-02 | TBD | Pending |
-| EVAL-03 | TBD | Pending |
+| GNN-01 | Phase 1 | Pending |
+| GNN-02 | Phase 1 | Pending |
+| GNN-03 | Phase 2 | Pending |
+| SELF-01 | Phase 3 | Pending |
+| SELF-02 | Phase 3 | Pending |
+| ENS-01 | Phase 2 | Pending |
+| ENS-02 | Phase 2 | Pending |
+| EVAL-01 | Phase 4 | Pending |
+| EVAL-02 | Phase 4 | Pending |
+| EVAL-03 | Phase 4 | Pending |
 
 **Coverage:**
 - v1 requirements: 10 total
-- Mapped to phases: 0
-- Unmapped: 10
+- Mapped to phases: 10
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-27*
-*Last updated: 2026-01-27 after initial definition*
+*Last updated: 2026-01-27 after roadmap creation*
