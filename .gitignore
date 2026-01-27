@@ -299,3 +299,4 @@ wandb/
 # Local configuration
 config.local.yaml
 .env.local
+/Research
