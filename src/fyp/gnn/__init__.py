@@ -22,6 +22,7 @@ from fyp.gnn.gat_verifier import GATVerifier
 from fyp.gnn.graph_builder import GridGraphBuilder
 from fyp.gnn.synthetic_dataset import AnomalyType, SyntheticAnomalyDataset
 from fyp.gnn.temporal_encoder import TemporalEncoder
+from fyp.gnn.trainer import GNNTrainer, train_gnn_verifier
 
 __all__ = [
     "GridGraphBuilder",
@@ -29,4 +30,6 @@ __all__ = [
     "GATVerifier",
     "SyntheticAnomalyDataset",
     "AnomalyType",
+    "GNNTrainer",
+    "train_gnn_verifier",
 ]
