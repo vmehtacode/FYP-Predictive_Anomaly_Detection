@@ -1,0 +1,314 @@
+% Grid Guardian: Predictive Anomaly Detection for UK Power Grids
+% BibTeX References for Aston University FYP
+% Generated: January 2026
+% Updated with verified author names for key papers
+
+% ============================================================================
+% GRAPH NEURAL NETWORKS FOR POWER GRIDS (KEY PAPERS)
+% ============================================================================
+
+@article{powergnn2025,
+  title     = {{PowerGNN}: A Topology-Aware Graph Neural Network for Electricity Grids},
+  author    = {Suri, Dhruv and Mangal, Mohak},
+  journal   = {arXiv preprint arXiv:2503.22721},
+  year      = {2025},
+  month     = {March},
+  url       = {https://arxiv.org/abs/2503.22721},
+  note      = {Integrates GraphSAGE with GRUs for power system state prediction using PyTorch Geometric}
+}
+
+@inproceedings{powergraph2024,
+  title     = {{PowerGraph}: A Power Grid Benchmark Dataset for Graph Neural Networks},
+  author    = {Varbella, Anna and Amara, Kenza and Gjorgiev, Blazhe and El-Assady, Mennatallah and Sansavini, Giovanni},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2024},
+  url       = {https://openreview.net/forum?id=qWTfCO4HvT},
+  note      = {GNN-tailored benchmark for cascading failures, power flows, and optimal power flows}
+}
+
+@article{physicsgnn2023,
+  title     = {Physics-Informed Graph Neural Network for Dynamic Reconfiguration of Power Systems},
+  author    = {Authier, Jules and Haider, Rabab and Annaswamy, Anuradha and Dorfler, Florian},
+  journal   = {arXiv preprint arXiv:2310.00728},
+  year      = {2023},
+  url       = {https://arxiv.org/abs/2310.00728},
+  note      = {GraPhyR framework combining physics constraints with GNN for grid reconfiguration}
+}
+
+% ============================================================================
+% GNN ARCHITECTURE FUNDAMENTALS (KEY PAPERS)
+% ============================================================================
+
+@inproceedings{gat2018,
+  title     = {Graph Attention Networks},
+  author    = {Veli{\v{c}}kovi{\'c}, Petar and Cucurull, Guillem and Casanova, Arantxa and Romero, Adriana and Li{\`o}, Pietro and Bengio, Yoshua},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2018},
+  url       = {https://openreview.net/forum?id=rJXMpikCZ},
+  note      = {Original GAT paper introducing attention mechanism for graphs}
+}
+
+@inproceedings{dropedge2020,
+  title     = {{DropEdge}: Towards Deep Graph Convolutional Networks on Node Classification},
+  author    = {Rong, Yu and Huang, Wenbing and Xu, Tingyang and Huang, Junzhou},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2020},
+  url       = {https://openreview.net/forum?id=Hkx1qkrKPr},
+  note      = {DropEdge alleviates overfitting and oversmoothing in deep GNNs}
+}
+
+@inproceedings{diffpool2018,
+  title     = {Hierarchical Graph Representation Learning with Differentiable Pooling},
+  author    = {Ying, Rex and You, Jiaxuan and Morris, Christopher and Ren, Xiang and Hamilton, William L. and Leskovec, Jure},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2018},
+  url       = {https://arxiv.org/abs/1806.08804},
+  note      = {DiffPool for hierarchical multi-resolution graph embeddings}
+}
+
+% ============================================================================
+% ANOMALY DETECTION SURVEYS AND METHODS (KEY PAPERS)
+% ============================================================================
+
+@article{graphanomalysurvey2022,
+  title     = {Graph Anomaly Detection with Graph Neural Networks: Current Status and Challenges},
+  author    = {Kim, Hwan and Lee, Byung Suk and Shin, Won-Yong and Lim, Sungsu},
+  journal   = {arXiv preprint arXiv:2209.14930},
+  year      = {2022},
+  url       = {https://arxiv.org/abs/2209.14930},
+  note      = {Comprehensive survey on graph-based anomaly detection with GNNs}
+}
+
+@article{dlanomalysurvey2022,
+  title     = {Deep Learning for Time Series Anomaly Detection: A Survey},
+  author    = {Darban, Zahra Zamanzadeh and Webb, Geoffrey I. and Pan, Shirui and Aggarwal, Charu C. and Salehi, Mahsa},
+  journal   = {ACM Computing Surveys},
+  year      = {2024},
+  volume    = {57},
+  number    = {1},
+  pages     = {1--42},
+  publisher = {ACM},
+  doi       = {10.1145/3691338},
+  url       = {https://arxiv.org/abs/2211.05244},
+  note      = {Reconstruction-based methods highly popular for unsupervised detection}
+}
+
+@inproceedings{mtadgat2020,
+  title     = {{MTAD-GAT}: Multivariate Time-series Anomaly Detection via Graph Attention Network},
+  author    = {Zhao, Hang and Wang, Yujing and Duan, Juanyong and Huang, Congrui and Cao, Defu and Tong, Yunhai and Xu, Bixiong and Bai, Jing and Tong, Jie and Zhang, Qi},
+  booktitle = {IEEE International Conference on Data Mining (ICDM)},
+  year      = {2020},
+  url       = {https://arxiv.org/abs/2009.02040},
+  note      = {Parallel GAT layers for feature-oriented and time-oriented attention}
+}
+
+@article{physicsautoencoder2023,
+  title     = {Physics-Informed Convolutional Autoencoder for Cyber Anomaly Detection in Power Distribution Grids},
+  author    = {Jabbari Zideh, Mehdi and Khushalani Solanki, Sarika},
+  journal   = {arXiv preprint arXiv:2312.04758},
+  year      = {2023},
+  url       = {https://arxiv.org/abs/2312.04758},
+  note      = {Physics constraints via Kirchhoff's law improve anomaly detection accuracy}
+}
+
+% ============================================================================
+% SELF-PLAY AND AZR METHODOLOGY (KEY PAPERS)
+% ============================================================================
+
+@article{selfplaysurvey2021,
+  title     = {Survey of Self-Play in Reinforcement Learning},
+  author    = {DiGiovanni, Anthony and Zell, Ethan C.},
+  journal   = {arXiv preprint arXiv:2107.02850},
+  year      = {2021},
+  url       = {https://arxiv.org/abs/2107.02850},
+  note      = {Self-play effective when environment is adversarial and labeled data scarce}
+}
+
+@article{selfplaysurvey2024,
+  title     = {A Survey on Self-play Methods in Reinforcement Learning},
+  author    = {Zhang, Ruize and Xu, Zelai and Ma, Chengdong and Yu, Chao and Tu, Wei-Wei and Tang, Wenhao and Huang, Shiyu and Ye, Deheng and Ding, Wenbo and Yang, Yaodong and Wang, Yu},
+  journal   = {arXiv preprint arXiv:2408.01072},
+  year      = {2024},
+  url       = {https://arxiv.org/abs/2408.01072},
+  note      = {Comprehensive 2024 survey covering self-play taxonomy and applications}
+}
+
+% ============================================================================
+% UNCERTAINTY QUANTIFICATION (KEY PAPERS)
+% ============================================================================
+
+@inproceedings{mcdropout2016,
+  title     = {Dropout as a {Bayesian} Approximation: Representing Model Uncertainty in Deep Learning},
+  author    = {Gal, Yarin and Ghahramani, Zoubin},
+  booktitle = {Proceedings of The 33rd International Conference on Machine Learning (ICML)},
+  pages     = {1050--1059},
+  year      = {2016},
+  volume    = {48},
+  series    = {PMLR},
+  url       = {http://proceedings.mlr.press/v48/gal16.html},
+  note      = {Foundational MC Dropout paper for epistemic uncertainty quantification}
+}
+
+@article{bayesautoencoder2022,
+  title     = {Bayesian Autoencoders with Uncertainty Quantification: Towards Trustworthy Anomaly Detection},
+  author    = {Yong, Bang Xiang and Brintrup, Alexandra},
+  journal   = {Expert Systems with Applications},
+  volume    = {209},
+  pages     = {118196},
+  year      = {2022},
+  publisher = {Elsevier},
+  doi       = {10.1016/j.eswa.2022.118196},
+  url       = {https://arxiv.org/abs/2202.12653},
+  note      = {BAEs provide trustworthy anomaly detection via epistemic and aleatoric uncertainty}
+}
+
+% ============================================================================
+% EVALUATION WITHOUT GROUND TRUTH (KEY PAPERS)
+% ============================================================================
+
+@inproceedings{unsupervisedvalidation2024,
+  title     = {Towards Unsupervised Validation of Anomaly-Detection Models},
+  author    = {Idan, Lihi},
+  booktitle = {Proceedings of the 27th European Conference on Artificial Intelligence (ECAI)},
+  year      = {2024},
+  url       = {https://arxiv.org/abs/2410.14579},
+  note      = {Validation methods when ground truth labels are absent}
+}
+
+% ============================================================================
+% SOFTWARE AND LIBRARIES (KEY CITATIONS)
+% ============================================================================
+
+@inproceedings{pytorchgeometric2019,
+  title     = {Fast Graph Representation Learning with {PyTorch Geometric}},
+  author    = {Fey, Matthias and Lenssen, Jan E.},
+  booktitle = {ICLR Workshop on Representation Learning on Graphs and Manifolds},
+  year      = {2019},
+  url       = {https://arxiv.org/abs/1903.02428},
+  note      = {Primary GNN library for PyTorch with 21K+ GitHub stars}
+}
+
+@inproceedings{pygtemporal2021,
+  title     = {{PyTorch Geometric Temporal}: Spatiotemporal Signal Processing with Neural Machine Learning Models},
+  author    = {Rozemberczki, Benedek and Scherer, Paul and He, Yixuan and Panagopoulos, George and Riedel, Alexander and Astefanoaei, Maria and Kiss, Oliver and Beres, Ferenc and L{\'o}pez, Guzm{\'a}n and Collignon, Nicolas and Sarkar, Rik},
+  booktitle = {Proceedings of the 30th ACM International Conference on Information \& Knowledge Management (CIKM)},
+  pages     = {4564--4573},
+  year      = {2021},
+  publisher = {ACM},
+  doi       = {10.1145/3459637.3482014},
+  url       = {https://arxiv.org/abs/2104.07788},
+  note      = {Spatiotemporal GNN library with TGCN, A3TGCN, DCRNN implementations}
+}
+
+% ============================================================================
+% ADDITIONAL SUPPORTING PAPERS
+% ============================================================================
+
+@misc{circuitbreaker2024,
+  title        = {Circuit Breaker Pattern},
+  author       = {{Microsoft Azure}},
+  year         = {2024},
+  howpublished = {Azure Architecture Center},
+  url          = {https://learn.microsoft.com/en-us/azure/architecture/patterns/circuit-breaker},
+  note         = {Pattern for handling transient faults in distributed systems}
+}
+
+@article{rewardhacking2024,
+  title   = {Reward Hacking in Reinforcement Learning},
+  author  = {Weng, Lilian},
+  journal = {Lil'Log},
+  year    = {2024},
+  url     = {https://lilianweng.github.io/posts/2024-11-28-reward-hacking/},
+  note    = {Agents exploit reward functions rather than achieve intended objectives}
+}
+
+% ============================================================================
+% SECONDARY REFERENCES (Anonymous - less likely to cite directly)
+% ============================================================================
+
+@article{explainablegnn2025,
+  title     = {Explainable Graph Neural Networks for Power Grid Fault Detection},
+  author    = {{IEEE Authors}},
+  journal   = {IEEE Transactions on Power Systems},
+  year      = {2025},
+  doi       = {10.1109/TPWRS.2025.11088107},
+  url       = {https://ieeexplore.ieee.org/document/11088107/},
+  note      = {Shows GNNs exhibit remarkable precision using phasor data and topology}
+}
+
+@article{multivariatephysics2024,
+  title     = {Multivariate Physics-Informed Convolutional Autoencoder for Anomaly Detection in Power Distribution Systems with High Penetration of {DERs}},
+  author    = {Jabbari Zideh, Mehdi and Khushalani Solanki, Sarika},
+  journal   = {arXiv preprint arXiv:2406.02927},
+  year      = {2024},
+  url       = {https://arxiv.org/abs/2406.02927},
+  note      = {Integrates nodal power balance equations for high DER penetration}
+}
+
+@article{oversmoothing2025,
+  title     = {Solving Oversmoothing in {GNNs} via Nonlocal Message Passing},
+  author    = {{arXiv Authors}},
+  journal   = {arXiv preprint arXiv:2512.08475},
+  year      = {2025},
+  month     = {December},
+  url       = {https://arxiv.org/abs/2512.08475},
+  note      = {Non-local message passing prevents oversmoothing up to 256 layers}
+}
+
+@article{gnntimeseriessurvey2023,
+  title     = {A Survey on Graph Neural Networks for Time Series: Forecasting, Classification, Imputation, and Anomaly Detection},
+  author    = {{arXiv Authors}},
+  journal   = {arXiv preprint arXiv:2307.03759},
+  year      = {2023},
+  url       = {https://arxiv.org/abs/2307.03759},
+  note      = {Comprehensive survey on GNN applications to time series tasks}
+}
+
+@article{pinninverse2025,
+  title     = {Ensembles of Graph and Physics-Informed Machine Learning for Scientific Modeling},
+  author    = {{Springer Authors}},
+  journal   = {Archives of Computational Methods in Engineering},
+  year      = {2025},
+  publisher = {Springer},
+  doi       = {10.1007/s11831-025-10325-5},
+  url       = {https://link.springer.com/article/10.1007/s11831-025-10325-5},
+  note      = {Ensemble GNNs reduce MAE; stacked PINNs reduce L2 errors by 40\%+}
+}
+
+@article{hierarchicalfallback2025,
+  title     = {Hierarchical Fallback Architecture for High Risk Online Machine Learning Inference},
+  author    = {{arXiv Authors}},
+  journal   = {arXiv preprint arXiv:2501.17834},
+  year      = {2025},
+  url       = {https://arxiv.org/abs/2501.17834},
+  note      = {Multi-tier fallback for ML inference reliability}
+}
+
+@article{asoi2025,
+  title     = {{ASOI}: Anomaly Separation and Overlap Index, an Internal Evaluation Metric for Unsupervised Anomaly Detection},
+  author    = {{Springer Authors}},
+  journal   = {Complex \& Intelligent Systems},
+  year      = {2025},
+  publisher = {Springer},
+  doi       = {10.1007/s40747-025-02204-0},
+  url       = {https://link.springer.com/article/10.1007/s40747-025-02204-0},
+  note      = {Internal evaluation metric when ground truth is unavailable}
+}
+
+@article{distributedgnn2024,
+  title     = {Distributed Graph Neural Network Training: A Survey},
+  author    = {{ACM Authors}},
+  journal   = {ACM Computing Surveys},
+  year      = {2024},
+  doi       = {10.1145/3648358},
+  url       = {https://dl.acm.org/doi/10.1145/3648358},
+  note      = {Survey on scaling GNN training to large graphs}
+}
+
+@software{elexondataportal,
+  author = {OSUKED},
+  title  = {{ElexonDataPortal}: Python Client for {BMRS} {API}},
+  year   = {2023},
+  url    = {https://github.com/OSUKED/ElexonDataPortal},
+  note   = {Standardized parameter names, automatic date-range orchestration for UK grid data}
+}
