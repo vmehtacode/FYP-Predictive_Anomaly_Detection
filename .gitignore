@@ -300,3 +300,8 @@ wandb/
 config.local.yaml
 .env.local
 /Research
+
+# Claude Code / AI tooling
+.planning/
+CLAUDE.md
+.claude/
