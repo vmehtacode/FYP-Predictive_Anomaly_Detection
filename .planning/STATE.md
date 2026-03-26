@@ -1,3 +1,19 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: — GNN-Based Anomaly Detection with Self-Play Validation
+status: executing
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-03-26T14:20:35.114Z"
+last_activity: 2026-03-26
+progress:
+  total_phases: 4
+  completed_phases: 1
+  total_plans: 9
+  completed_plans: 7
+  percent: 78
+---
+
 # Grid Guardian — Project State
 
 ## Project Reference
@@ -5,24 +21,28 @@
 See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** Detect anomalies in energy distribution networks without labeled data, using physics constraints and self-play learned patterns on graph-structured grid data
-**Current focus:** Phase 1 COMPLETE - Ready for Phase 2 (Self-Play Generator)
+**Current focus:** Phase 02 — hybrid-verifier-integration
 
 ## Current Position
 
-- **Phase:** 1 of 4 (GNN Verifier Foundation) - COMPLETE
-- **Plan:** 6 of 6 (Training & Evaluation Scripts - gap closure) - COMPLETE
-- **Status:** Phase 1 fully complete with all success criteria met
-- **Last activity:** 2026-01-27 - Completed 01-06-PLAN.md (training/evaluation scripts + trained model)
-- **Progress:** [######....] 60%
+Phase: 02 (hybrid-verifier-integration) — EXECUTING
+Plan: 1 of 3
+
+- **Phase:** 2 of 4 (Hybrid Verifier Integration) - EXECUTING
+- **Plan:** 1 of 3 (Config & Physics Layer) - COMPLETE
+- **Status:** Executing Phase 02, Plan 02-02 next
+- **Last activity:** 2026-03-26
+- **Progress:** [████████░░] 78%
 
 ## Performance Metrics
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| Plans completed | 6 | 01-01, 01-02, 01-03, 01-04, 01-05, 01-06 |
+| Plans completed | 7 | 01-01 to 01-06, 02-01 |
 | Requirements done | 1/10 | GNN-based Verifier (Phase 1 complete) |
 | Phases done | 1/4 | Phase 1 complete |
 | Model accuracy | 98.33% | On held-out test set (target was 85%) |
+| Phase 02 P01 | 5min | 2 tasks | 3 files |
 
 ## Key Decisions
 
@@ -48,6 +68,9 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 | sklearn.metrics for evaluation | Reliable precision/recall/F1 computation | 01-06 |
 | 2000 training samples sufficient | Achieved 98.33% accuracy, no need for more | 01-06 |
 | Model converged at epoch 53 | Early stopping triggered, best at epoch 34 | 01-06 |
+| Auto-detect voltage vs power in PhysicsConstraintLayer | 2x absolute_max_kw heuristic avoids scoring voltages as capacity | 02-01 |
+| Nested Pydantic config with Field(ge/le) | Automatic validation rejects invalid physics thresholds | 02-01 |
+| Tolerance band scoring for physics constraints | Three-zone graduated response (safe=0, warning=linear, violation=1) | 02-01 |
 
 ## Blockers
 
@@ -56,6 +79,7 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Accumulated Context
 
 ### Technical Decisions
+
 - COO edge format: `torch.tensor(edges).t().contiguous()` pattern
 - Node ID bidirectional mapping for reverse lookup
 - torch-geometric 2.7.0 as GNN foundation
@@ -73,6 +97,7 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 - Evaluation JSON format: accuracy, precision, recall, F1, confusion matrix
 
 ### Open Questions
+
 - ~~SSEN metadata schema for graph construction~~ RESOLVED: Works with primary_substation_id, secondary_substation_id, lv_feeder_id columns
 - ~~GNN hyperparameters~~ RESOLVED: 64 hidden, 3 layers, 4 heads, latency ~30ms
 - ~~Test coverage target~~ RESOLVED: 95% achieved
@@ -81,6 +106,7 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 - ~~Trained model accuracy~~ RESOLVED: 98.33% on held-out test (well above 85% target)
 
 ### Deferred Items
+
 - Uncertainty quantification (UQ-01, UQ-02) - v2
 - Elexon BMRS live integration (DATA-01, DATA-02) - v2
 - FYP report and presentation (ACAD-01, ACAD-02) - v2
@@ -106,13 +132,14 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 - 2026-01-27: Completed 01-04 Synthetic Dataset (2 tasks, 6 min) - Gap closure
 - 2026-01-27: Completed 01-05 Training Pipeline (2 tasks, 5 min) - Gap closure
 - 2026-01-27: Completed 01-06 Training/Evaluation Scripts (3 tasks, 11 min) - Gap closure, PHASE 1 COMPLETE
+- 2026-03-26: Completed 02-01 Config & Physics Layer (2 tasks, 5 min) - Phase 2 begins
 
 ## Session Continuity
 
-**Last session:** 2026-02-18T10:06:12.455Z
-**Stopped at:** Phase 2 planned (3 plans, 3 waves, verified)
-**Resume file:** .planning/phases/02-hybrid-verifier-integration/02-01-PLAN.md
-**Next action:** Begin Phase 2 planning (Self-Play Generator)
+**Last session:** 2026-03-26T14:20:35.111Z
+**Stopped at:** Completed 02-01-PLAN.md
+**Resume file:** None
+**Next action:** Execute Plan 02-02 (CascadeLogicLayer, GNN integration, HybridVerifierAgent)
 
 ---
-*Last updated: 2026-01-27*
+*Last updated: 2026-03-26*

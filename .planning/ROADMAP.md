@@ -41,7 +41,7 @@ Plans:
 **Plans:** 3 plans in 3 waves
 
 Plans:
-- [ ] 02-01-PLAN.md — Hybrid Verifier Config + Physics Constraint Layer
+- [x] 02-01-PLAN.md — Hybrid Verifier Config + Physics Constraint Layer
 - [ ] 02-02-PLAN.md — HybridVerifierAgent + Ensemble Integration
 - [ ] 02-03-PLAN.md — Tests + Drop-in Replacement Verification
 
