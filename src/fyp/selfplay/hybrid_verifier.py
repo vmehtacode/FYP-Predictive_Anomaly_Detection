@@ -2,8 +2,8 @@
 
 This module implements the multi-layer verification ensemble that combines:
   - Layer 1: Physics constraints (voltage, capacity, ramp rate)
-  - Layer 2: GNN-based pattern detection (GATVerifier, added in Plan 02-02)
-  - Layer 3: Cascade logic (added in Plan 02-02)
+  - Layer 2: GNN-based pattern detection (frozen GATVerifier from Phase 1)
+  - Layer 3: Cascade logic (neighbor anomaly propagation in grid topology)
 
 The physics constraint layer produces continuous severity scores in [0, 1]
 using a tolerance band approach: safe zone = 0, graduated warning zone,
@@ -12,9 +12,26 @@ full violation = 1.  All thresholds are config-driven (no hardcoded values).
 
 from __future__ import annotations
 
-import numpy as np
+import logging
+from pathlib import Path
+from typing import TYPE_CHECKING
 
-from fyp.selfplay.hybrid_verifier_config import PhysicsConfig
+import numpy as np
+import torch
+
+from fyp.gnn.gat_verifier import GATVerifier
+from fyp.selfplay.hybrid_verifier_config import (
+    CascadeConfig,
+    EnsembleWeightsConfig,
+    HybridVerifierConfig,
+    PhysicsConfig,
+    load_hybrid_verifier_config,
+)
+
+if TYPE_CHECKING:
+    from fyp.selfplay.proposer import ScenarioProposal
+
+logger = logging.getLogger(__name__)
 
 
 # ============================================================================
@@ -223,9 +240,216 @@ class PhysicsConstraintLayer:
 
 
 # ============================================================================
-# Cascade Logic Layer (Layer 3) — to be added in Plan 02-02
+# Cascade Logic Layer (Layer 3 of ensemble)
 # ============================================================================
 
+
+class CascadeLogicLayer:
+    """Third layer of the hybrid verifier ensemble.
+
+    Scores nodes based on neighbor anomaly propagation patterns in the grid
+    topology.  A node's cascade score reflects how many of its neighbors are
+    also anomalous, indicating a potential propagation event rather than an
+    isolated spike.
+
+    The layer takes physics and GNN scores as input, builds an adjacency
+    structure from the COO edge_index, and computes a per-node cascade score
+    in [0, 1].
+
+    Attributes:
+        propagation_threshold: Minimum signal to trigger cascade check.
+        decay_factor: Signal decay per hop (reserved for future multi-hop).
+    """
+
+    def __init__(self, config: CascadeConfig) -> None:
+        self.propagation_threshold = config.propagation_threshold
+        self.decay_factor = config.decay_factor
+
+    @staticmethod
+    def _build_adjacency(
+        edge_index: torch.Tensor, num_nodes: int
+    ) -> dict[int, list[int]]:
+        """Build adjacency dict from COO edge_index.
+
+        Args:
+            edge_index: Shape [2, num_edges] COO format tensor.
+            num_nodes: Total number of nodes in the graph.
+
+        Returns:
+            Dict mapping each node index to a list of neighbor indices.
+        """
+        adj: dict[int, list[int]] = {i: [] for i in range(num_nodes)}
+        src = edge_index[0].tolist()
+        dst = edge_index[1].tolist()
+        for s, d in zip(src, dst):
+            adj[s].append(d)
+        return adj
+
+    def evaluate(
+        self,
+        physics_scores: np.ndarray,
+        gnn_scores: np.ndarray,
+        edge_index: torch.Tensor,
+    ) -> np.ndarray:
+        """Compute per-node cascade scores.
+
+        Args:
+            physics_scores: Per-node physics severity [0, 1].
+            gnn_scores: Per-node GNN anomaly scores [0, 1].
+            edge_index: COO edge tensor [2, num_edges].
+
+        Returns:
+            Per-node cascade scores in [0, 1].
+        """
+        num_nodes = len(physics_scores)
+        base_signal = np.maximum(physics_scores, gnn_scores)
+        adj = self._build_adjacency(edge_index, num_nodes)
+
+        cascade_scores = np.zeros(num_nodes)
+        for node in range(num_nodes):
+            if base_signal[node] <= self.propagation_threshold:
+                continue
+            neighbors = adj[node]
+            if not neighbors:
+                continue
+            anomalous_neighbors = sum(
+                1
+                for n in neighbors
+                if base_signal[n] > self.propagation_threshold
+            )
+            cascade_scores[node] = anomalous_neighbors / len(neighbors)
+
+        return cascade_scores
+
+
 # ============================================================================
-# HybridVerifierAgent (ensemble orchestrator) — to be added in Plan 02-02
+# GNN / ensemble helper methods (used by HybridVerifierAgent)
+# ============================================================================
+
+
+def _build_node_features(
+    forecast: np.ndarray,
+    num_graph_nodes: int,
+    temporal_features: int = 5,
+) -> torch.Tensor:
+    """Map a 1-D forecast array to per-node feature tensors for GNN input.
+
+    LV feeder nodes (first N values of forecast) are assigned their
+    forecast values directly.  Remaining upstream nodes receive the mean
+    forecast value.  The single value per node is tiled across
+    *temporal_features* dimensions to match the GATVerifier training
+    configuration.
+
+    Args:
+        forecast: 1-D array of forecast values.
+        num_graph_nodes: Total nodes in the graph.
+        temporal_features: Feature dimension expected by the GNN (default 5).
+
+    Returns:
+        Tensor of shape [num_graph_nodes, temporal_features].
+    """
+    mean_val = float(np.mean(forecast)) if len(forecast) > 0 else 0.0
+    node_values = np.full(num_graph_nodes, mean_val)
+
+    # Assign forecast values to LV feeder nodes (first N graph nodes or
+    # first N forecast values, whichever is smaller)
+    n_assign = min(len(forecast), num_graph_nodes)
+    node_values[:n_assign] = forecast[:n_assign]
+
+    # Tile across temporal feature dimension
+    features = np.tile(node_values[:, np.newaxis], (1, temporal_features))
+    return torch.tensor(features, dtype=torch.float32)
+
+
+def _run_gnn_inference(
+    gnn_model: GATVerifier,
+    forecast: np.ndarray,
+    edge_index: torch.Tensor,
+    num_graph_nodes: int,
+    early_exit_mask: np.ndarray,
+    node_type: torch.Tensor | None = None,
+    temporal_features: int = 5,
+) -> np.ndarray:
+    """Run frozen GNN forward pass and return per-node anomaly scores.
+
+    All nodes participate in the forward pass (early-exited nodes still
+    contribute features to neighbors via message passing).  After inference,
+    GNN scores for early-exited nodes are zeroed out (they use physics
+    score only in the ensemble).
+
+    Args:
+        gnn_model: Frozen GATVerifier model.
+        forecast: 1-D forecast array.
+        edge_index: COO edge tensor.
+        num_graph_nodes: Number of graph nodes.
+        early_exit_mask: Boolean mask — True for early-exited nodes.
+        node_type: Optional node type tensor for GNN.
+        temporal_features: Temporal feature dimension.
+
+    Returns:
+        Per-node GNN anomaly scores in [0, 1], early-exited nodes zeroed.
+    """
+    x = _build_node_features(forecast, num_graph_nodes, temporal_features)
+
+    with torch.no_grad():
+        scores_tensor = gnn_model(x, edge_index, node_type=node_type)
+
+    # scores_tensor shape: [num_graph_nodes, 1]
+    gnn_scores = scores_tensor.squeeze(-1).cpu().numpy()
+
+    # Zero out early-exited nodes — they use physics score only
+    # Align masks: early_exit_mask may be shorter than gnn_scores
+    n_mask = min(len(early_exit_mask), len(gnn_scores))
+    gnn_scores[:n_mask][early_exit_mask[:n_mask]] = 0.0
+
+    return gnn_scores
+
+
+def _combine_scores(
+    physics: np.ndarray,
+    gnn: np.ndarray,
+    cascade: np.ndarray,
+    early_exit_mask: np.ndarray,
+    weights: EnsembleWeightsConfig,
+) -> tuple[np.ndarray, dict]:
+    """Combine layer scores with configurable weighted average.
+
+    Normal nodes use the full weighted average.  Early-exited nodes use
+    physics score only (weights become physics=1.0, gnn=0.0, cascade=0.0).
+
+    Args:
+        physics: Per-node physics scores.
+        gnn: Per-node GNN scores (already zeroed for early-exited).
+        cascade: Per-node cascade scores.
+        early_exit_mask: Boolean mask — True for early-exited nodes.
+        weights: Ensemble weight configuration.
+
+    Returns:
+        Tuple of (combined_scores, breakdown_dict).
+    """
+    w_p, w_g, w_c = weights.physics, weights.gnn, weights.cascade
+    total_weight = w_p + w_g + w_c
+    if total_weight == 0:
+        total_weight = 1.0  # safety
+
+    # Normal weighted average
+    combined = (w_p * physics + w_g * gnn + w_c * cascade) / total_weight
+
+    # Override early-exited nodes: physics only
+    combined[early_exit_mask] = physics[early_exit_mask]
+
+    breakdown = {
+        "physics_scores": physics,
+        "gnn_scores": gnn,
+        "cascade_scores": cascade,
+        "combined_scores": combined,
+        "early_exit_mask": early_exit_mask,
+        "early_exit_count": int(np.sum(early_exit_mask)),
+        "weights": {"physics": w_p, "gnn": w_g, "cascade": w_c},
+    }
+    return combined, breakdown
+
+
+# ============================================================================
+# HybridVerifierAgent (ensemble orchestrator) — to be added in Task 2
 # ============================================================================
