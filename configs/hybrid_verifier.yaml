@@ -1,0 +1,77 @@
+# Hybrid Verifier Configuration
+# ==============================
+# Physics thresholds, cascade logic, and ensemble weights for the
+# three-layer hybrid verifier (physics + GNN + cascade).
+#
+# All physics values are based on UK distribution network standards.
+# Modify per network region as needed.
+
+# ---------------------------------------------------------------
+# Physics Constraints
+# ---------------------------------------------------------------
+physics:
+
+  # Voltage constraints (BS EN 50160 / UK G59/3)
+  # UK statutory voltage: 230V +10% / -10%
+  # Safe zone narrower than statutory limits to provide graduated warning.
+  voltage:
+    nominal_v: 230.0             # Harmonised European nominal (V)
+    lower_limit_pct: -10.0       # Absolute lower limit: 207V
+    lower_safe_pct: -6.0         # Safe zone lower bound: 216.2V
+    upper_safe_pct: 8.0          # Safe zone upper bound: 248.4V
+    upper_limit_pct: 10.0        # Absolute upper limit: 253V
+
+  # Capacity constraints (BS 7671:2018 + SSEN feeder metadata)
+  # typical_max_kw: normal domestic peak (~15 kW with cooker + immersion)
+  # absolute_max_kw: 100A fuse at 230V = 23 kW single-phase, but 100 kW
+  #   accounts for three-phase commercial or aggregated feeders.
+  capacity:
+    typical_max_kw: 15.0         # Typical domestic max demand (kW)
+    absolute_max_kw: 100.0       # Absolute fuse-limited max (kW)
+    overload_threshold_pct: 80.0 # Warning zone starts at 80% of range
+    critical_threshold_pct: 95.0 # Critical zone at 95% of range
+
+  # Ramp rate constraints
+  # How fast demand can change between consecutive 30-min intervals.
+  # Fast ramps suggest EV charging, equipment switching, or anomalies.
+  ramp_rate:
+    max_ramp_kw_per_interval: 5.0      # Hard limit (kW per 30 min)
+    warning_ramp_kw_per_interval: 3.5   # Warning threshold (kW per 30 min)
+
+# ---------------------------------------------------------------
+# Cascade Logic
+# ---------------------------------------------------------------
+# Detects anomaly propagation through grid topology.
+# A node needs anomaly signal above propagation_threshold before
+# its neighbors are checked for cascade patterns.
+cascade:
+  propagation_threshold: 0.3     # Min signal to trigger cascade check
+  decay_factor: 0.7              # Signal decay per hop
+
+# ---------------------------------------------------------------
+# Ensemble Weights
+# ---------------------------------------------------------------
+# Fixed weights for combining the three verification layers.
+# Should sum to 1.0 for interpretable scores.
+# Physics and GNN equally weighted; cascade is supplementary.
+ensemble_weights:
+  physics: 0.4                   # Physics constraint layer
+  gnn: 0.4                       # GNN (GATVerifier) layer
+  cascade: 0.2                   # Cascade logic layer
+
+# ---------------------------------------------------------------
+# Top-Level Parameters
+# ---------------------------------------------------------------
+
+# Early-exit threshold: nodes with physics severity above this
+# skip GNN scoring and use physics score only.  High value (0.9)
+# means only severe violations trigger early exit.
+early_exit_threshold: 0.9
+
+# False-negative penalty ratio: FN (missed anomaly) is penalized
+# this many times more than FP (false alarm).  Grid safety favours
+# catching real anomalies even at the cost of more false alarms.
+false_negative_penalty_ratio: 2.0
+
+# Path to trained GATVerifier checkpoint from Phase 1.
+gnn_checkpoint_path: "data/derived/models/gnn/gnn_verifier_v1.pth"
