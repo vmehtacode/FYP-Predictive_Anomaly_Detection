@@ -43,7 +43,7 @@ Plans:
 Plans:
 - [x] 02-01-PLAN.md — Hybrid Verifier Config + Physics Constraint Layer
 - [x] 02-02-PLAN.md — HybridVerifierAgent + Ensemble Integration
-- [ ] 02-03-PLAN.md — Tests + Drop-in Replacement Verification
+- [x] 02-03-PLAN.md — Tests + Drop-in Replacement Verification
 
 **Success Criteria:**
 1. Physics constraint layer (hard bounds from SSEN: voltage, capacity, ramp rates) validates inputs before GNN processing
