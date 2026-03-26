@@ -11,7 +11,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [x] **GNN-01**: Build PyTorch Geometric graph from SSEN feeder/substation topology
 - [x] **GNN-02**: Implement spatial-temporal GNN architecture (GAT/GraphSAGE + GRU)
-- [ ] **GNN-03**: Replace MLP Verifier with GNN Verifier in self-play training loop
+- [x] **GNN-03**: Replace MLP Verifier with GNN Verifier in self-play training loop
 
 ### Self-Play Enhancement
 
@@ -73,7 +73,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | GNN-01 | Phase 1 | Complete |
 | GNN-02 | Phase 1 | Complete |
-| GNN-03 | Phase 2 | Pending |
+| GNN-03 | Phase 2 | Complete |
 | SELF-01 | Phase 3 | Pending |
 | SELF-02 | Phase 3 | Pending |
 | ENS-01 | Phase 2 | Complete |
