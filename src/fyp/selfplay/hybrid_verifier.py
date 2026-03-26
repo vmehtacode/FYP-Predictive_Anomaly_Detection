@@ -451,5 +451,306 @@ def _combine_scores(
 
 
 # ============================================================================
-# HybridVerifierAgent (ensemble orchestrator) — to be added in Task 2
+# HybridVerifierAgent (ensemble orchestrator)
 # ============================================================================
+
+
+class HybridVerifierAgent:
+    """Drop-in replacement for :class:`VerifierAgent` in SelfPlayTrainer.
+
+    Orchestrates the three-layer hybrid ensemble:
+      1. Physics constraint layer (tolerance band scoring)
+      2. Frozen GNN pattern detection (GATVerifier from Phase 1)
+      3. Cascade logic (neighbor anomaly propagation)
+
+    The ``evaluate()`` method matches the ``VerifierAgent.evaluate()``
+    signature exactly so it can be used interchangeably in ``trainer.py``.
+
+    When no GNN model or graph data is available the agent falls back to
+    physics-only mode gracefully.
+
+    Attributes:
+        config: Full hybrid verifier configuration.
+        physics_layer: Physics constraint layer.
+        cascade_layer: Cascade logic layer.
+        gnn_model: Frozen GATVerifier (None if unavailable).
+        graph_data: PyG Data for edge_index and node_type (None if unavailable).
+    """
+
+    def __init__(
+        self,
+        config: HybridVerifierConfig,
+        gnn_model: GATVerifier | None = None,
+        graph_data: "torch.Tensor | None" = None,
+    ) -> None:
+        self.config = config
+        self.physics_layer = PhysicsConstraintLayer(config.physics)
+        self.cascade_layer = CascadeLogicLayer(config.cascade)
+        self.gnn_model: GATVerifier | None = None
+        self.graph_data = graph_data
+
+        # GNN model setup
+        if gnn_model is not None:
+            self.gnn_model = gnn_model
+            self.gnn_model.eval()
+            for param in self.gnn_model.parameters():
+                param.requires_grad = False
+            logger.info("GNN model provided and frozen (eval mode).")
+        elif Path(config.gnn_checkpoint_path).exists():
+            self._load_gnn_from_checkpoint(config.gnn_checkpoint_path)
+        else:
+            logger.warning(
+                "No GNN model available (no model passed, checkpoint %s "
+                "not found). Running in physics-only mode.",
+                config.gnn_checkpoint_path,
+            )
+
+    def _load_gnn_from_checkpoint(self, checkpoint_path: str) -> None:
+        """Load GATVerifier from a training checkpoint.
+
+        Args:
+            checkpoint_path: Path to the ``.pth`` checkpoint file.
+        """
+        checkpoint = torch.load(
+            checkpoint_path, map_location="cpu", weights_only=False
+        )
+        model = GATVerifier(
+            temporal_features=5,
+            hidden_channels=64,
+            num_layers=3,
+            heads=4,
+        )
+        model.load_state_dict(checkpoint["model_state_dict"])
+        model.eval()
+        for param in model.parameters():
+            param.requires_grad = False
+
+        self.gnn_model = model
+        logger.info(
+            "Loaded GNN model from checkpoint %s (frozen, eval mode).",
+            checkpoint_path,
+        )
+
+    # ------------------------------------------------------------------
+    # Public API — matches VerifierAgent.evaluate() signature exactly
+    # ------------------------------------------------------------------
+
+    def evaluate(
+        self,
+        forecast: np.ndarray,
+        scenario: "ScenarioProposal | None" = None,
+        timestamps: np.ndarray | None = None,
+        return_details: bool = False,
+    ) -> float | tuple[float, dict]:
+        """Evaluate forecast against the hybrid ensemble.
+
+        Args:
+            forecast: 1-D array of per-node forecast values.
+            scenario: Optional scenario proposal (presence indicates
+                expected anomaly for reward computation).
+            timestamps: Optional timestamps (unused, kept for API compat).
+            return_details: Whether to return detailed breakdown.
+
+        Returns:
+            reward (float) in [-1, +1], or (reward, details_dict) when
+            *return_details* is True.
+        """
+        forecast = np.asarray(forecast, dtype=np.float64)
+        n_nodes = forecast.shape[0]
+
+        # Step 1: Physics layer
+        physics_scores, _physics_details = self.physics_layer.evaluate(forecast)
+
+        # Step 2: Early-exit mask
+        early_exit_mask = physics_scores > self.config.early_exit_threshold
+
+        # Step 3: GNN inference (if available)
+        if self.gnn_model is not None and self.graph_data is not None:
+            num_graph_nodes = self.graph_data.num_nodes
+            node_type = getattr(self.graph_data, "node_type", None)
+            gnn_scores_raw = _run_gnn_inference(
+                self.gnn_model,
+                forecast,
+                self.graph_data.edge_index,
+                num_graph_nodes,
+                early_exit_mask,
+                node_type=node_type,
+                temporal_features=self.gnn_model.temporal_features,
+            )
+            # Align GNN scores to forecast length
+            gnn_scores = np.zeros(n_nodes)
+            n_copy = min(len(gnn_scores_raw), n_nodes)
+            gnn_scores[:n_copy] = gnn_scores_raw[:n_copy]
+        else:
+            gnn_scores = np.zeros(n_nodes)
+
+        # Step 4: Cascade logic (if graph available)
+        if self.graph_data is not None:
+            cascade_scores_raw = self.cascade_layer.evaluate(
+                physics_scores, gnn_scores, self.graph_data.edge_index
+            )
+            # Align to forecast length
+            cascade_scores = np.zeros(n_nodes)
+            n_copy = min(len(cascade_scores_raw), n_nodes)
+            cascade_scores[:n_copy] = cascade_scores_raw[:n_copy]
+        else:
+            cascade_scores = np.zeros(n_nodes)
+
+        # Step 5: Combine scores
+        combined_scores, breakdown = _combine_scores(
+            physics_scores,
+            gnn_scores,
+            cascade_scores,
+            early_exit_mask,
+            self.config.ensemble_weights,
+        )
+
+        # Step 6: Compute reward
+        reward = self._compute_reward(combined_scores, scenario)
+
+        if not return_details:
+            return reward
+
+        # Step 7: Build trainer-compatible details dict
+        details = self._build_details(
+            physics_scores,
+            gnn_scores,
+            cascade_scores,
+            combined_scores,
+            early_exit_mask,
+            breakdown,
+        )
+
+        return reward, details
+
+    # ------------------------------------------------------------------
+    # Reward computation
+    # ------------------------------------------------------------------
+
+    def _compute_reward(
+        self,
+        combined_scores: np.ndarray,
+        scenario: "ScenarioProposal | None",
+    ) -> float:
+        """Compute confidence-based reward in [-1, +1].
+
+        Args:
+            combined_scores: Per-node combined anomaly scores [0, 1].
+            scenario: If present, an anomaly is expected.
+
+        Returns:
+            Reward float clipped to [-1, +1].
+        """
+        mean_score = float(np.mean(combined_scores))
+        confidence = abs(mean_score - 0.5) * 2.0  # [0, 1]
+
+        expect_anomaly = scenario is not None
+        predicted_anomaly = mean_score > 0.5
+
+        if predicted_anomaly == expect_anomaly:
+            # Correct prediction
+            reward = confidence
+        elif expect_anomaly and not predicted_anomaly:
+            # False negative — asymmetric penalty
+            reward = -confidence * self.config.false_negative_penalty_ratio
+        else:
+            # False positive
+            reward = -confidence
+
+        return float(np.clip(reward, -1.0, 1.0))
+
+    # ------------------------------------------------------------------
+    # Details dict builder (trainer.py compatible)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _build_details(
+        physics_scores: np.ndarray,
+        gnn_scores: np.ndarray,
+        cascade_scores: np.ndarray,
+        combined_scores: np.ndarray,
+        early_exit_mask: np.ndarray,
+        breakdown: dict,
+    ) -> dict:
+        """Build a details dict compatible with SelfPlayTrainer.
+
+        The trainer at ``trainer.py:209`` iterates:
+            ``[v for d in details.values() for v in d['violations']]``
+
+        Every value in the returned dict **must** have a ``'violations'``
+        key to avoid KeyError.
+        """
+        details: dict[str, dict] = {
+            "physics": {
+                "score": float(np.mean(physics_scores)),
+                "violations": [
+                    f"Physics violation at node {i}: severity {s:.2f}"
+                    for i, s in enumerate(physics_scores)
+                    if s > 0.5
+                ],
+                "weight": breakdown["weights"]["physics"],
+                "weighted_score": (
+                    float(np.mean(physics_scores))
+                    * breakdown["weights"]["physics"]
+                ),
+            },
+            "gnn": {
+                "score": float(np.mean(gnn_scores)),
+                "violations": [
+                    f"GNN anomaly at node {i}: score {s:.2f}"
+                    for i, s in enumerate(gnn_scores)
+                    if s > 0.5
+                ],
+                "weight": breakdown["weights"]["gnn"],
+                "weighted_score": (
+                    float(np.mean(gnn_scores))
+                    * breakdown["weights"]["gnn"]
+                ),
+            },
+            "cascade": {
+                "score": float(np.mean(cascade_scores)),
+                "violations": [
+                    f"Cascade propagation at node {i}: score {s:.2f}"
+                    for i, s in enumerate(cascade_scores)
+                    if s > 0.5
+                ],
+                "weight": breakdown["weights"]["cascade"],
+                "weighted_score": (
+                    float(np.mean(cascade_scores))
+                    * breakdown["weights"]["cascade"]
+                ),
+            },
+            "_breakdown": {
+                "physics_scores": physics_scores,
+                "gnn_scores": gnn_scores,
+                "cascade_scores": cascade_scores,
+                "combined_scores": combined_scores,
+                "early_exit_mask": early_exit_mask,
+                "early_exit_count": int(np.sum(early_exit_mask)),
+                "weights": breakdown["weights"],
+                "violations": [],  # Required for trainer iteration compat
+            },
+        }
+        return details
+
+
+# ============================================================================
+# Factory function
+# ============================================================================
+
+
+def create_hybrid_verifier(
+    config_path: str | Path = "configs/hybrid_verifier.yaml",
+    graph_data: "torch.Tensor | None" = None,
+) -> HybridVerifierAgent:
+    """Factory to create HybridVerifierAgent from config file.
+
+    Args:
+        config_path: Path to YAML configuration file.
+        graph_data: Optional PyG Data for graph topology.
+
+    Returns:
+        Configured HybridVerifierAgent instance.
+    """
+    config = load_hybrid_verifier_config(config_path)
+    return HybridVerifierAgent(config, graph_data=graph_data)
