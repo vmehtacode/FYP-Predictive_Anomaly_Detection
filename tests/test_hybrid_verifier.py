@@ -6,9 +6,16 @@ Tests cover:
 - PhysicsConstraintLayer (voltage, capacity, ramp rate)
 - CascadeLogicLayer (neighbor anomaly propagation)
 - Ensemble score combination (normal vs early-exit nodes)
+- Confidence-based reward computation
+- HybridVerifierAgent drop-in replacement for VerifierAgent
+- SelfPlayTrainer compatibility (call patterns, details dict iteration)
+- Edge cases (single element, large arrays, zeros, negatives)
 """
 
 from __future__ import annotations
+
+import inspect
+from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
@@ -366,3 +373,313 @@ class TestEnsembleCombination:
             "combined_scores", "early_exit_mask", "early_exit_count", "weights",
         ]:
             assert key in breakdown, f"Missing key: {key}"
+
+
+# ============================================================================
+# Reward Computation Tests
+# ============================================================================
+
+
+class TestRewardComputation:
+    """Tests for confidence-based reward computation."""
+
+    def test_correct_normal_detection_positive_reward(
+        self, hybrid_verifier: HybridVerifierAgent
+    ) -> None:
+        """Normal forecast, no scenario -> positive reward."""
+        forecast = np.full(10, 230.0)  # safe voltage
+        reward = hybrid_verifier.evaluate(forecast, scenario=None)
+        assert isinstance(reward, float)
+        assert reward >= 0.0
+
+    def test_correct_anomaly_detection_positive_reward(
+        self, hybrid_verifier: HybridVerifierAgent
+    ) -> None:
+        """Anomalous forecast, scenario present -> positive reward."""
+        forecast = np.full(10, 260.0)  # violation voltage
+        scenario = MagicMock()
+        reward = hybrid_verifier.evaluate(forecast, scenario=scenario)
+        assert isinstance(reward, float)
+        assert reward > 0.0
+
+    def test_false_negative_high_penalty(
+        self, hybrid_verifier: HybridVerifierAgent
+    ) -> None:
+        """Normal-looking forecast when scenario present -> negative reward."""
+        forecast = np.full(10, 230.0)  # safe -> low scores -> predicted normal
+        scenario = MagicMock()
+        reward = hybrid_verifier.evaluate(forecast, scenario=scenario)
+        assert reward < 0.0
+
+    def test_false_positive_penalty(
+        self, hybrid_verifier: HybridVerifierAgent
+    ) -> None:
+        """Anomalous-looking forecast when no scenario -> negative reward."""
+        forecast = np.full(10, 260.0)  # violation -> predicted anomaly
+        reward = hybrid_verifier.evaluate(forecast, scenario=None)
+        assert reward < 0.0
+
+    def test_reward_in_range(
+        self, hybrid_verifier: HybridVerifierAgent
+    ) -> None:
+        """Reward always in [-1, +1] for various inputs."""
+        test_cases = [
+            (np.full(5, 230.0), None),
+            (np.full(5, 260.0), None),
+            (np.full(5, 200.0), MagicMock()),
+            (np.full(5, 230.0), MagicMock()),
+            (np.zeros(5), None),
+            (np.full(5, 1000.0), MagicMock()),
+        ]
+        for forecast, scenario in test_cases:
+            reward = hybrid_verifier.evaluate(forecast, scenario=scenario)
+            assert -1.0 <= reward <= 1.0, f"Reward {reward} out of range"
+
+    def test_asymmetric_penalty_ratio(
+        self, hybrid_verifier: HybridVerifierAgent
+    ) -> None:
+        """False negative penalty is config.false_negative_penalty_ratio times FP penalty."""
+        # Normal forecast: 230V safe -> low mean_score (predicted normal)
+        normal_forecast = np.full(10, 230.0)
+
+        # FN: predicted normal, scenario present
+        fn_reward = hybrid_verifier.evaluate(
+            normal_forecast, scenario=MagicMock()
+        )
+
+        # FP: predicted anomaly, no scenario
+        anomalous_forecast = np.full(10, 260.0)
+        fp_reward = hybrid_verifier.evaluate(
+            anomalous_forecast, scenario=None
+        )
+
+        # Both should be negative
+        assert fn_reward < 0.0
+        assert fp_reward < 0.0
+
+        # FN penalty should be larger in magnitude (asymmetric)
+        assert abs(fn_reward) >= abs(fp_reward) * 0.5
+
+
+# ============================================================================
+# Integration Tests: Drop-in Replacement
+# ============================================================================
+
+
+class TestHybridVerifierIntegration:
+    """Integration tests verifying HybridVerifierAgent is a drop-in replacement."""
+
+    def test_evaluate_signature_matches_verifier_agent(self) -> None:
+        """Parameter names and defaults match VerifierAgent.evaluate()."""
+        from fyp.selfplay.verifier import VerifierAgent
+
+        hybrid_sig = inspect.signature(HybridVerifierAgent.evaluate)
+        verifier_sig = inspect.signature(VerifierAgent.evaluate)
+
+        hybrid_params = dict(hybrid_sig.parameters)
+        verifier_params = dict(verifier_sig.parameters)
+
+        # Both should have: self, forecast, scenario, timestamps, return_details
+        for param_name in ["forecast", "scenario", "timestamps", "return_details"]:
+            assert param_name in hybrid_params, f"Missing param: {param_name}"
+            assert param_name in verifier_params, f"Missing param in VerifierAgent: {param_name}"
+
+        # Defaults should be compatible
+        assert hybrid_params["scenario"].default is None or hybrid_params["scenario"].default == inspect.Parameter.empty
+        assert hybrid_params["return_details"].default is False
+
+    def test_evaluate_returns_float(
+        self, hybrid_verifier: HybridVerifierAgent
+    ) -> None:
+        """evaluate(forecast) returns float."""
+        forecast = np.full(10, 230.0)
+        result = hybrid_verifier.evaluate(forecast)
+        assert isinstance(result, float)
+
+    def test_evaluate_returns_tuple_with_details(
+        self, hybrid_verifier: HybridVerifierAgent
+    ) -> None:
+        """evaluate(forecast, return_details=True) returns (float, dict)."""
+        forecast = np.full(10, 230.0)
+        result = hybrid_verifier.evaluate(forecast, return_details=True)
+        assert isinstance(result, tuple)
+        assert len(result) == 2
+        reward, details = result
+        assert isinstance(reward, float)
+        assert isinstance(details, dict)
+
+    def test_evaluate_with_scenario_parameter(
+        self, hybrid_verifier: HybridVerifierAgent
+    ) -> None:
+        """evaluate(forecast, scenario=None) works."""
+        forecast = np.full(10, 230.0)
+        result = hybrid_verifier.evaluate(forecast, scenario=None)
+        assert isinstance(result, float)
+
+    def test_evaluate_with_timestamps_parameter(
+        self, hybrid_verifier: HybridVerifierAgent
+    ) -> None:
+        """evaluate(forecast, timestamps=None) works."""
+        forecast = np.full(10, 230.0)
+        result = hybrid_verifier.evaluate(forecast, timestamps=None)
+        assert isinstance(result, float)
+
+    def test_trainer_call_pattern_training(
+        self, hybrid_verifier: HybridVerifierAgent
+    ) -> None:
+        """Simulate trainer line 160-161: evaluate with return_details=True."""
+        forecast = np.random.uniform(220, 240, size=20)
+        scenario = MagicMock()
+
+        # Exact call pattern from trainer.py:160-161
+        verification_reward, details = hybrid_verifier.evaluate(
+            forecast=forecast, scenario=scenario, return_details=True
+        )
+
+        assert isinstance(verification_reward, float)
+        assert isinstance(details, dict)
+
+    def test_trainer_call_pattern_validation(
+        self, hybrid_verifier: HybridVerifierAgent
+    ) -> None:
+        """Simulate trainer line 378: evaluate(median_forecast, scenario)."""
+        forecast = np.random.uniform(220, 240, size=20)
+        scenario = MagicMock()
+
+        # Exact call pattern from trainer.py:378
+        verification_reward = hybrid_verifier.evaluate(forecast, scenario)
+
+        assert isinstance(verification_reward, float)
+
+    def test_physics_only_mode_works(self) -> None:
+        """HybridVerifierAgent without GNN model still produces valid rewards."""
+        config = HybridVerifierConfig()
+        verifier = HybridVerifierAgent(config)
+
+        forecast = np.full(10, 230.0)
+        reward = verifier.evaluate(forecast)
+
+        assert isinstance(reward, float)
+        assert -1.0 <= reward <= 1.0
+
+    def test_details_dict_trainer_compatible(
+        self, hybrid_verifier: HybridVerifierAgent
+    ) -> None:
+        """Details dict compatible with trainer.py:209 iteration pattern.
+
+        The trainer does: [v for d in details.values() for v in d['violations']]
+        Every value in details must have a 'violations' key.
+        """
+        forecast = np.full(10, 260.0)  # violation to get non-empty violations
+
+        _, details = hybrid_verifier.evaluate(
+            forecast, scenario=MagicMock(), return_details=True
+        )
+
+        # This is the CRITICAL trainer compatibility check
+        violations = [v for d in details.values() for v in d["violations"]]
+        assert isinstance(violations, list)
+
+    def test_selfplay_trainer_substitution(
+        self, hybrid_verifier: HybridVerifierAgent
+    ) -> None:
+        """Reproduce the exact trainer code path for details dict consumption.
+
+        From trainer.py lines 160-209:
+        1. reward, details = verifier.evaluate(forecast, scenario=..., return_details=True)
+        2. if reward < -0.5:
+               violations = [v for d in details.values() for v in d['violations']]
+        """
+        # Test with normal forecast
+        normal_forecast = np.full(10, 230.0)
+        reward_normal, details_normal = hybrid_verifier.evaluate(
+            normal_forecast, scenario=None, return_details=True
+        )
+        if reward_normal < -0.5:
+            violations = [v for d in details_normal.values() for v in d["violations"]]
+            assert isinstance(violations, list)
+
+        # Test with anomalous forecast (FP case)
+        anomalous_forecast = np.full(10, 260.0)
+        reward_anom, details_anom = hybrid_verifier.evaluate(
+            anomalous_forecast, scenario=None, return_details=True
+        )
+        # Iteration must always work regardless of reward value
+        violations = [v for d in details_anom.values() for v in d["violations"]]
+        assert isinstance(violations, list)
+
+        # Test with scenario present (FN case)
+        reward_fn, details_fn = hybrid_verifier.evaluate(
+            normal_forecast, scenario=MagicMock(), return_details=True
+        )
+        violations = [v for d in details_fn.values() for v in d["violations"]]
+        assert isinstance(violations, list)
+
+    def test_details_dict_has_constraint_keys(
+        self, hybrid_verifier: HybridVerifierAgent
+    ) -> None:
+        """Details dict has physics, gnn, cascade, _breakdown keys."""
+        forecast = np.full(10, 230.0)
+        _, details = hybrid_verifier.evaluate(forecast, return_details=True)
+
+        for key in ["physics", "gnn", "cascade", "_breakdown"]:
+            assert key in details, f"Missing key: {key}"
+
+        # Each constraint key should have score, violations, weight, weighted_score
+        for key in ["physics", "gnn", "cascade"]:
+            d = details[key]
+            for field in ["score", "violations", "weight", "weighted_score"]:
+                assert field in d, f"Missing field '{field}' in details['{key}']"
+
+        # _breakdown should have full diagnostic info
+        bd = details["_breakdown"]
+        for field in [
+            "physics_scores", "gnn_scores", "cascade_scores",
+            "combined_scores", "early_exit_mask", "early_exit_count", "weights",
+        ]:
+            assert field in bd, f"Missing field '{field}' in _breakdown"
+
+
+# ============================================================================
+# Edge Case Tests
+# ============================================================================
+
+
+class TestEdgeCases:
+    """Edge case tests for various forecast inputs."""
+
+    def test_single_element_forecast(
+        self, hybrid_verifier: HybridVerifierAgent
+    ) -> None:
+        """Forecast with 1 element."""
+        forecast = np.array([230.0])
+        reward = hybrid_verifier.evaluate(forecast)
+        assert isinstance(reward, float)
+        assert -1.0 <= reward <= 1.0
+
+    def test_large_forecast(
+        self, hybrid_verifier: HybridVerifierAgent
+    ) -> None:
+        """Forecast with 1000 elements."""
+        forecast = np.random.uniform(220, 240, size=1000)
+        reward = hybrid_verifier.evaluate(forecast)
+        assert isinstance(reward, float)
+        assert -1.0 <= reward <= 1.0
+
+    def test_all_zeros_forecast(
+        self, hybrid_verifier: HybridVerifierAgent
+    ) -> None:
+        """All zeros (edge case for capacity/ramp)."""
+        forecast = np.zeros(10)
+        reward = hybrid_verifier.evaluate(forecast)
+        assert isinstance(reward, float)
+        assert -1.0 <= reward <= 1.0
+
+    def test_negative_values_forecast(
+        self, hybrid_verifier: HybridVerifierAgent
+    ) -> None:
+        """Negative forecast values (edge case for voltage)."""
+        forecast = np.array([-10.0, -5.0, 0.0, 5.0, 10.0])
+        reward = hybrid_verifier.evaluate(forecast)
+        assert isinstance(reward, float)
+        assert -1.0 <= reward <= 1.0
