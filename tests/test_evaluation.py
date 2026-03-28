@@ -58,10 +58,10 @@ class TestVerifierBenchmark:
     def test_benchmark_creates_all_configurations(
         self, benchmark: VerifierBenchmark,
     ) -> None:
-        """Benchmark should create at least 5 configurations."""
+        """Benchmark should create at least 8 configurations."""
         configs = benchmark._create_configurations()
-        assert len(configs) >= 5, (
-            f"Expected at least 5 configs, got {len(configs)}: "
+        assert len(configs) >= 8, (
+            f"Expected at least 8 configs, got {len(configs)}: "
             f"{list(configs.keys())}"
         )
 
@@ -89,8 +89,8 @@ class TestVerifierBenchmark:
     ) -> None:
         """Benchmark should produce results for all configurations."""
         configs = benchmark_results.get("configurations", {})
-        assert len(configs) >= 5, (
-            f"Expected at least 5 config results, got {len(configs)}"
+        assert len(configs) >= 8, (
+            f"Expected at least 8 config results, got {len(configs)}"
         )
 
         # Check required metric keys for non-error results
@@ -185,6 +185,17 @@ class TestVerifierBenchmark:
                 assert "f1" in loaded["configurations"][name]
         finally:
             os.unlink(tmp_path)
+
+    def test_benchmark_includes_all_eval02_baselines(
+        self, benchmark_results: dict,
+    ) -> None:
+        """EVAL-02: benchmark must include isolation_forest, autoencoder, and decomposition."""
+        configs = benchmark_results.get("configurations", {})
+        required_baselines = {"isolation_forest", "autoencoder", "decomposition"}
+        found = required_baselines.intersection(configs.keys())
+        assert found == required_baselines, (
+            f"EVAL-02 requires {required_baselines}, found only {found}"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -315,7 +326,7 @@ class TestIntegration:
         bench_results = benchmark.run_benchmark()
 
         assert "configurations" in bench_results
-        assert len(bench_results["configurations"]) >= 5
+        assert len(bench_results["configurations"]) >= 8
 
         # 2. Run ablation
         study = AblationStudy(benchmark)

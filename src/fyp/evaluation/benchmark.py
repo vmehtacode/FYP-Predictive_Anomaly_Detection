@@ -527,6 +527,10 @@ class VerifierBenchmark:
             Results dict with standard metrics, or error dict if training fails.
         """
         try:
+            # Fix random seeds for reproducibility before training
+            np.random.seed(self.seed)
+            torch.manual_seed(self.seed)
+
             # Create detector with window_size capped to num_nodes
             window_size = min(48, self.num_nodes)
             detector = AutoencoderAnomalyDetector(

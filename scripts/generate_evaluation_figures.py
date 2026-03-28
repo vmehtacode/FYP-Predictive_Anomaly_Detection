@@ -57,6 +57,8 @@ _COLORS = {
     "physics_gnn": "#7f7f7f",
     "physics_cascade": "#bcbd22",
     "gnn_cascade": "#17becf",
+    "isolation_forest": "#ff7f0e",  # Orange
+    "autoencoder": "#aec7e8",      # Light blue
 }
 
 
@@ -460,7 +462,7 @@ def plot_component_contribution(
 
     # Categorise bars by type
     def _bar_type(name: str) -> str:
-        if name in ("baseline", "decomposition"):
+        if name in ("baseline", "decomposition", "isolation_forest", "autoencoder"):
             return "baseline"
         singles = {"physics_only", "gnn_only", "cascade_only"}
         if name in singles:
