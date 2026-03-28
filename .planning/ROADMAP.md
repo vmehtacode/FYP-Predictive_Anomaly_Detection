@@ -64,7 +64,7 @@ Plans:
 **Plans:** 2 plans in 2 waves
 
 Plans:
-- [ ] 03-01-PLAN.md — Graph-aware proposer tests + implementation (TDD)
+- [x] 03-01-PLAN.md — Graph-aware proposer tests + implementation (TDD)
 - [ ] 03-02-PLAN.md — SelfPlayTrainer integration + integration tests
 
 **Success Criteria:**

@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: — GNN-Based Anomaly Detection with Self-Play Validation
-status: verifying
+status: executing
 stopped_at: Completed 04-04-PLAN.md
-last_updated: "2026-03-28T12:17:35.187Z"
+last_updated: "2026-03-28T14:04:04.276Z"
 last_activity: 2026-03-28
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 13
+  total_plans: 15
   completed_plans: 13
   percent: 100
 ---
@@ -21,18 +21,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** Detect anomalies in energy distribution networks without labeled data, using physics constraints and self-play learned patterns on graph-structured grid data
-**Current focus:** Phase 04 — evaluation-framework
+**Current focus:** Phase 03 — graph-aware-proposer
 
 ## Current Position
 
-Phase: 04 (evaluation-framework) — EXECUTING
-Plan: 1 of 4
+Phase: 03 (graph-aware-proposer) — EXECUTING
+Plan: 2 of 2
 
-- **Phase:** 2 of 4 (Hybrid Verifier Integration) - EXECUTING
-- **Plan:** 3 of 3 (Config & Physics Layer) - COMPLETE
-- **Status:** Phase complete — ready for verification
+- **Phase:** 03 of 4 (Graph-Aware Proposer)
+- **Plan:** 2 of 2
+- **Status:** Executing Phase 03
 - **Last activity:** 2026-03-28
-- **Progress:** [██████████] 100%
+- **Progress:** [██████████████] 93%
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Plan: 1 of 4
 | Phase 04 P02 | 4min | 2 tasks | 3 files |
 | Phase 04 P03 | 6min | 2 tasks | 2 files |
 | Phase 04 P04 | 3min | 2 tasks | 3 files |
+| Phase 03 P01 | 5min | 3 tasks | 2 files |
 
 ## Key Decisions
 
@@ -77,6 +78,10 @@ Plan: 1 of 4
 | Auto-detect voltage vs power in PhysicsConstraintLayer | 2x absolute_max_kw heuristic avoids scoring voltages as capacity | 02-01 |
 | Nested Pydantic config with Field(ge/le) | Automatic validation rejects invalid physics thresholds | 02-01 |
 | Tolerance band scoring for physics constraints | Three-zone graduated response (safe=0, warning=linear, violation=1) | 02-01 |
+| 1-3 seed nodes per scenario | Cascade expands from few seeds; realistic propagation | 03-01 |
+| LV feeder preference for cascading types | COLD_SNAP/OUTAGE/EV_SPIKE affect end-consumer nodes first | 03-01 |
+| 30% cap on affected nodes | Prevents unrealistic whole-graph anomalies | 03-01 |
+| Per-node blending formula | baseline + mag * (transform - baseline) for smooth interpolation | 03-01 |
 
 ## Blockers
 
@@ -139,13 +144,14 @@ Plan: 1 of 4
 - 2026-01-27: Completed 01-05 Training Pipeline (2 tasks, 5 min) - Gap closure
 - 2026-01-27: Completed 01-06 Training/Evaluation Scripts (3 tasks, 11 min) - Gap closure, PHASE 1 COMPLETE
 - 2026-03-26: Completed 02-01 Config & Physics Layer (2 tasks, 5 min) - Phase 2 begins
+- 2026-03-28: Completed 03-01 Graph-Aware Proposer (3 tasks, 5 min) - Phase 3 begins
 
 ## Session Continuity
 
-**Last session:** 2026-03-28T12:17:35.184Z
-**Stopped at:** Completed 04-04-PLAN.md
+**Last session:** 2026-03-28T14:10:34Z
+**Stopped at:** Completed 03-01-PLAN.md
 **Resume file:** None
-**Next action:** Execute Plan 02-02 (CascadeLogicLayer, GNN integration, HybridVerifierAgent)
+**Next action:** Execute Plan 03-02 (SelfPlayTrainer graph integration)
 
 ---
-*Last updated: 2026-03-26*
+*Last updated: 2026-03-28*

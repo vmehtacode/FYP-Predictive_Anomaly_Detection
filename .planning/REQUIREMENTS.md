@@ -15,8 +15,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Self-Play Enhancement
 
-- [ ] **SELF-01**: Implement graph-aware Proposer generating topology-respecting scenarios
-- [ ] **SELF-02**: Scenarios cascade through neighbors (COLD_SNAP, OUTAGE propagation)
+- [x] **SELF-01**: Implement graph-aware Proposer generating topology-respecting scenarios
+- [x] **SELF-02**: Scenarios cascade through neighbors (COLD_SNAP, OUTAGE propagation)
 
 ### Three-Layer Ensemble
 
