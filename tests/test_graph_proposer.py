@@ -743,13 +743,16 @@ class TestTrainerIntegration:
                 "affected_nodes": {0: 1.0, 1: 1.0, 2: 0.7},
             },
         )
-        # Wrap scenario methods to track calls
-        original_apply_graph = scenario.apply_to_graph_timeseries
+        # Wrap scenario methods to track calls. Return 1-D result so
+        # downstream metrics (MAE, MAPE) work with the 1-D solver output.
         graph_call_count = [0]
 
         def tracked_apply_graph(baseline):
             graph_call_count[0] += 1
-            return original_apply_graph(baseline)
+            # Return 1-D aggregation so rest of pipeline works
+            if baseline.ndim == 2:
+                return np.mean(baseline, axis=0)
+            return baseline
 
         scenario.apply_to_graph_timeseries = tracked_apply_graph
         proposer.propose_scenario.return_value = scenario
@@ -759,7 +762,8 @@ class TestTrainerIntegration:
             proposer, mock_solver, mock_verifier, graph_data=sample_graph_data
         )
 
-        # Use 2-D ground truth (num_nodes x timesteps)
+        # Use 2-D ground truth (num_nodes x timesteps) to trigger
+        # the graph_timeseries branch
         num_nodes = sample_graph_data.num_nodes
         batch = [
             (np.random.rand(336), np.random.rand(num_nodes, 48))

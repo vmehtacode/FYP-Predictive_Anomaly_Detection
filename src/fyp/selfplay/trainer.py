@@ -59,6 +59,7 @@ class SelfPlayTrainer:
         solver: SolverAgent,
         verifier: VerifierAgent,
         config: dict[str, Any] | None = None,
+        graph_data=None,
     ):
         """Initialize self-play trainer.
 
@@ -67,10 +68,12 @@ class SelfPlayTrainer:
             solver: SolverAgent instance
             verifier: VerifierAgent instance
             config: Training configuration
+            graph_data: Optional PyG Data for graph-aware proposer
         """
         self.proposer = proposer
         self.solver = solver
         self.verifier = verifier
+        self.graph_data = graph_data
 
         # Default configuration
         default_config = {
@@ -145,6 +148,7 @@ class SelfPlayTrainer:
                 conditioning_samples=conditioning_samples,
                 forecast_horizon=len(ground_truth),
                 current_timestamp=current_timestamp,
+                graph_data=self.graph_data,
             )
 
             # Step 2: SOLVE - forecast with scenario
@@ -153,8 +157,11 @@ class SelfPlayTrainer:
             )
             median_forecast = forecast["0.5"]
 
-            # Apply scenario to create actual target
-            modified_target = scenario.apply_to_timeseries(ground_truth)
+            # Apply scenario: use per-node cascade when graph topology available
+            if self.graph_data is not None and ground_truth.ndim == 2:
+                modified_target = scenario.apply_to_graph_timeseries(ground_truth)
+            else:
+                modified_target = scenario.apply_to_timeseries(ground_truth)
 
             # Step 3: VERIFY - evaluate forecast
             verification_reward, details = self.verifier.evaluate(
