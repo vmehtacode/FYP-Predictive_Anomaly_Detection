@@ -55,17 +55,13 @@ Plans:
 
 ---
 
-### Phase 3: Graph-Aware Proposer
+### Phase 3: Graph-Aware Proposer — SKIPPED (Future Work)
 
 **Goal:** Enhance the Proposer to generate topology-respecting anomaly scenarios where disturbances propagate through connected nodes (e.g., COLD_SNAP cascading through neighbors).
 
 **Requirements:** SELF-01, SELF-02
 
-**Success Criteria:**
-1. GraphAwareProposer generates scenarios that respect grid topology (anomalies occur on connected subgraphs, not random nodes)
-2. Cascade scenarios (COLD_SNAP, OUTAGE) propagate through physically connected neighbors with configurable decay
-3. Self-play training maintains scenario diversity (each of 5 types appears in at least 15% of batches, no mode collapse)
-4. Generated scenarios are visually distinguishable and pass domain plausibility review
+**Status:** Deferred to future work for thesis. Current ProposerAgent generates sufficient scenario diversity for evaluation.
 
 **Depends on:** Phase 2
 
@@ -73,18 +69,25 @@ Plans:
 
 ### Phase 4: Evaluation Framework
 
-**Goal:** Validate the GNN-based approach through rigorous multi-level evaluation comparing against baselines and measuring physics compliance.
+**Goal:** Validate the hybrid verifier approach through rigorous multi-level evaluation comparing HybridVerifierAgent vs baseline VerifierAgent vs ablated configurations, measuring F1/precision/recall/accuracy, inference latency, early-exit rate, and component contributions.
 
 **Requirements:** EVAL-01, EVAL-02, EVAL-03
 
+**Plans:** 3 plans in 3 waves
+
+Plans:
+- [x] 04-01-PLAN.md — Evaluation Harness + Synthetic Benchmark
+- [ ] 04-02-PLAN.md — Ablation Study + Physics Compliance Analysis
+- [ ] 04-03-PLAN.md — Figures, LaTeX Tables + Test Suite
+
 **Success Criteria:**
-1. Precision, recall, and F1 scores computed against physics-violation ground truth and synthetic scenarios
-2. GNN Verifier performance compared against IsolationForest, Autoencoder, and DecompositionAnomalyDetector on identical test splits
-3. Physics compliance rate measured (percentage of detected anomalies that violate known physical constraints)
-4. Ablation study quantifies contribution of each component (GNN-only vs. physics-only vs. hybrid ensemble)
+1. Precision, recall, F1, and accuracy computed for HybridVerifierAgent vs baseline VerifierAgent on synthetic anomaly dataset
+2. Ablation study quantifies each component's contribution: physics-only vs GNN-only vs cascade-only vs full hybrid ensemble
+3. Inference latency and early-exit rate measured across configurations
+4. Per-anomaly-type breakdown and physics compliance rate measured
 5. Results documented with statistical significance testing and visualization for FYP report
 
-**Depends on:** Phase 3
+**Depends on:** Phase 2
 
 ---
 
@@ -94,8 +97,8 @@ Plans:
 |-------|------|--------|--------------|----------|
 | 1 | GNN Verifier Foundation | ✓ Complete | GNN-01, GNN-02 | 2/10 |
 | 2 | Hybrid Verifier Integration | ✓ Complete | GNN-03, ENS-01, ENS-02 | 3/10 |
-| 3 | Graph-Aware Proposer | Not started | SELF-01, SELF-02 | 2/10 |
-| 4 | Evaluation Framework | Not started | EVAL-01, EVAL-02, EVAL-03 | 3/10 |
+| 3 | Graph-Aware Proposer | ⏭ Skipped (Future Work) | SELF-01, SELF-02 | 2/10 |
+| 4 | Evaluation Framework | Planning | EVAL-01, EVAL-02, EVAL-03 | 3/10 |
 
 **Total Coverage:** 10/10 requirements mapped
 
