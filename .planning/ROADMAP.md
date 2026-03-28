@@ -79,7 +79,7 @@ Plans:
 - [x] 04-01-PLAN.md — Evaluation Harness + Synthetic Benchmark
 - [x] 04-02-PLAN.md — Ablation Study + Physics Compliance Analysis
 - [x] 04-03-PLAN.md — Figures, LaTeX Tables + Test Suite
-- [ ] 04-04-PLAN.md — Wire IsolationForest + Autoencoder baselines (gap closure)
+- [x] 04-04-PLAN.md — Wire IsolationForest + Autoencoder baselines (gap closure)
 
 **Success Criteria:**
 1. Precision, recall, F1, and accuracy computed for HybridVerifierAgent vs baseline VerifierAgent on synthetic anomaly dataset
