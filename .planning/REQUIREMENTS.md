@@ -27,7 +27,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [x] **EVAL-01**: Implement precision/recall/F1 evaluation against baselines
 - [x] **EVAL-02**: Compare GNN Verifier vs IsolationForest, Autoencoder, DecompositionAnomalyDetector
-- [ ] **EVAL-03**: Measure physics compliance rate of detected anomalies
+- [x] **EVAL-03**: Measure physics compliance rate of detected anomalies
 
 ## v2 Requirements
 
@@ -80,7 +80,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ENS-02 | Phase 2 | Complete |
 | EVAL-01 | Phase 4 | Complete |
 | EVAL-02 | Phase 4 | Complete |
-| EVAL-03 | Phase 4 | Pending |
+| EVAL-03 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 10 total
