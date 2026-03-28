@@ -21,6 +21,7 @@ import numpy as np
 import torch
 
 from sklearn.ensemble import IsolationForest
+from sklearn.metrics import roc_auc_score, roc_curve, precision_recall_curve, auc
 
 from fyp.baselines.anomaly import DecompositionAnomalyDetector
 from fyp.models.autoencoder import AutoencoderAnomalyDetector
@@ -628,8 +629,9 @@ class VerifierBenchmark:
         """
         y_true = np.array(true_labels)
         y_pred = np.array(pred_labels)
+        y_scores = np.array(scores) if scores else np.zeros(len(y_true))
 
-        # Classification metrics
+        # Classification metrics (fixed threshold)
         tp = int(np.sum((y_true == 1) & (y_pred == 1)))
         fp = int(np.sum((y_true == 0) & (y_pred == 1)))
         fn = int(np.sum((y_true == 1) & (y_pred == 0)))
@@ -643,6 +645,65 @@ class VerifierBenchmark:
             if (precision + recall) > 0
             else 0.0
         )
+
+        # ── Ranking-based metrics (threshold-independent) ──
+        try:
+            has_both_classes = len(np.unique(y_true)) == 2
+        except Exception:
+            has_both_classes = False
+
+        if has_both_classes and len(y_scores) == len(y_true):
+            try:
+                roc_auc = float(roc_auc_score(y_true, y_scores))
+            except ValueError:
+                roc_auc = None
+
+            try:
+                pr_precision, pr_recall, _ = precision_recall_curve(
+                    y_true, y_scores,
+                )
+                pr_auc_val = float(auc(pr_recall, pr_precision))
+            except ValueError:
+                pr_auc_val = None
+
+            # Optimal threshold via Youden's J statistic
+            try:
+                fpr, tpr, thresholds_roc = roc_curve(y_true, y_scores)
+                j_scores = tpr - fpr
+                best_idx = int(np.argmax(j_scores))
+                optimal_threshold = float(thresholds_roc[best_idx])
+                # Cap infinite thresholds (occurs when AUC ≈ 0.5)
+                if not np.isfinite(optimal_threshold):
+                    optimal_threshold = float(np.max(y_scores)) + 0.01
+
+                # Re-compute metrics at optimal threshold
+                y_pred_opt = (y_scores >= optimal_threshold).astype(int)
+                tp_o = int(np.sum((y_true == 1) & (y_pred_opt == 1)))
+                fp_o = int(np.sum((y_true == 0) & (y_pred_opt == 1)))
+                fn_o = int(np.sum((y_true == 1) & (y_pred_opt == 0)))
+                tn_o = int(np.sum((y_true == 0) & (y_pred_opt == 0)))
+
+                opt_accuracy = (tp_o + tn_o) / len(y_true)
+                opt_precision = tp_o / (tp_o + fp_o) if (tp_o + fp_o) > 0 else 0.0
+                opt_recall = tp_o / (tp_o + fn_o) if (tp_o + fn_o) > 0 else 0.0
+                opt_f1 = (
+                    2 * opt_precision * opt_recall / (opt_precision + opt_recall)
+                    if (opt_precision + opt_recall) > 0 else 0.0
+                )
+            except (ValueError, IndexError):
+                optimal_threshold = None
+                opt_accuracy = None
+                opt_precision = None
+                opt_recall = None
+                opt_f1 = None
+        else:
+            roc_auc = None
+            pr_auc_val = None
+            optimal_threshold = None
+            opt_accuracy = None
+            opt_precision = None
+            opt_recall = None
+            opt_f1 = None
 
         # Latency metrics
         latency_arr = np.array(latencies) if latencies else np.array([0.0])
@@ -660,10 +721,21 @@ class VerifierBenchmark:
             "name": name,
             "description": description,
             "type": config_type,
+            # Fixed-threshold metrics
             "accuracy": accuracy,
             "precision": precision,
             "recall": recall,
             "f1": f1,
+            # Ranking-based metrics (threshold-independent)
+            "roc_auc": roc_auc,
+            "pr_auc": pr_auc_val,
+            # Optimal threshold (Youden's J)
+            "optimal_threshold": optimal_threshold,
+            "optimal_accuracy": opt_accuracy,
+            "optimal_precision": opt_precision,
+            "optimal_recall": opt_recall,
+            "optimal_f1": opt_f1,
+            # Latency
             "mean_latency_ms": mean_latency_ms,
             "p95_latency_ms": p95_latency_ms,
             "early_exit_rate": early_exit_rate,

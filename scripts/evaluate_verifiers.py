@@ -56,8 +56,9 @@ def print_summary_table(results: dict) -> None:
 
     # Header
     header = (
-        f"{'Configuration':<20} | {'Accuracy':>8} | {'Precision':>9} | "
-        f"{'Recall':>6} | {'F1':>6} | {'Latency(ms)':>11} | {'Early-Exit':>10}"
+        f"{'Configuration':<20} | {'ROC-AUC':>7} | {'PR-AUC':>6} | "
+        f"{'Opt-F1':>6} | {'Opt-Thr':>7} | {'Opt-Prec':>8} | {'Opt-Rec':>7} | "
+        f"{'Latency':>7} | {'Early-Exit':>10}"
     )
     separator = "-" * len(header)
 
@@ -68,21 +69,30 @@ def print_summary_table(results: dict) -> None:
 
     for name, cfg_result in configs.items():
         if "error" in cfg_result:
-            print(f"{name:<20} | {'ERROR':>8} | {cfg_result['error']}")
+            print(f"{name:<20} | {'ERROR':>7} | {cfg_result['error']}")
             continue
 
-        accuracy = cfg_result.get("accuracy", 0.0)
-        precision = cfg_result.get("precision", 0.0)
-        recall = cfg_result.get("recall", 0.0)
-        f1 = cfg_result.get("f1", 0.0)
+        roc_auc = cfg_result.get("roc_auc")
+        pr_auc = cfg_result.get("pr_auc")
+        opt_f1 = cfg_result.get("optimal_f1")
+        opt_thr = cfg_result.get("optimal_threshold")
+        opt_prec = cfg_result.get("optimal_precision")
+        opt_rec = cfg_result.get("optimal_recall")
         latency = cfg_result.get("mean_latency_ms", 0.0)
         early_exit = cfg_result.get("early_exit_rate")
 
+        roc_str = f"{roc_auc:.4f}" if roc_auc is not None else "N/A"
+        pr_str = f"{pr_auc:.4f}" if pr_auc is not None else "N/A"
+        opt_f1_str = f"{opt_f1:.4f}" if opt_f1 is not None else "N/A"
+        opt_thr_str = f"{opt_thr:.4f}" if opt_thr is not None else "N/A"
+        opt_prec_str = f"{opt_prec:.4f}" if opt_prec is not None else "N/A"
+        opt_rec_str = f"{opt_rec:.4f}" if opt_rec is not None else "N/A"
         early_exit_str = f"{early_exit * 100:.1f}%" if early_exit is not None else "N/A"
 
         print(
-            f"{name:<20} | {accuracy:>8.4f} | {precision:>9.4f} | "
-            f"{recall:>6.4f} | {f1:>6.4f} | {latency:>11.2f} | {early_exit_str:>10}"
+            f"{name:<20} | {roc_str:>7} | {pr_str:>6} | "
+            f"{opt_f1_str:>6} | {opt_thr_str:>7} | {opt_prec_str:>8} | {opt_rec_str:>7} | "
+            f"{latency:>7.2f} | {early_exit_str:>10}"
         )
 
     print(separator)

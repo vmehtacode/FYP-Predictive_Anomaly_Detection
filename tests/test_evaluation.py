@@ -108,6 +108,7 @@ class TestVerifierBenchmark:
         """Each configuration result must contain standard metrics."""
         configs = benchmark_results.get("configurations", {})
         required = {"accuracy", "precision", "recall", "f1", "mean_latency_ms"}
+        ranking_metrics = {"roc_auc", "pr_auc", "optimal_threshold", "optimal_f1"}
 
         for name, result in configs.items():
             if "error" in result:
@@ -115,6 +116,11 @@ class TestVerifierBenchmark:
             for metric in required:
                 assert metric in result, (
                     f"Metric '{metric}' missing in '{name}' results"
+                )
+            # Ranking-based metrics must be present (may be None)
+            for metric in ranking_metrics:
+                assert metric in result, (
+                    f"Ranking metric '{metric}' missing in '{name}' results"
                 )
 
     def test_benchmark_metrics_in_valid_range(
@@ -136,6 +142,22 @@ class TestVerifierBenchmark:
             assert latency >= 0.0, (
                 f"{name}.mean_latency_ms = {latency} is negative"
             )
+            # Ranking-based metrics: valid when not None
+            roc_auc = result.get("roc_auc")
+            if roc_auc is not None:
+                assert 0.0 <= roc_auc <= 1.0, (
+                    f"{name}.roc_auc = {roc_auc} is outside [0, 1]"
+                )
+            pr_auc = result.get("pr_auc")
+            if pr_auc is not None:
+                assert 0.0 <= pr_auc <= 1.0, (
+                    f"{name}.pr_auc = {pr_auc} is outside [0, 1]"
+                )
+            opt_f1 = result.get("optimal_f1")
+            if opt_f1 is not None:
+                assert 0.0 <= opt_f1 <= 1.0, (
+                    f"{name}.optimal_f1 = {opt_f1} is outside [0, 1]"
+                )
 
     def test_benchmark_reproducible_with_seed(self) -> None:
         """Running benchmark twice with the same seed should produce identical F1."""

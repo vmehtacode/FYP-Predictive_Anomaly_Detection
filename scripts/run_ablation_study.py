@@ -32,28 +32,34 @@ from fyp.evaluation.benchmark import VerifierBenchmark
 
 def _print_component_table(results: dict) -> None:
     """Print component contribution comparison table."""
-    print("\n=== Component Contribution ===")
-    print(f"{'Config':<20s} | {'F1':>6s} | {'Prec':>6s} | {'Recall':>6s} | {'Lift vs Baseline':>16s}")
-    print("-" * 20 + "-+-" + "-" * 6 + "-+-" + "-" * 6 + "-+-" + "-" * 6 + "-+-" + "-" * 16)
+    print("\n=== Component Contribution (Ranking-Based Metrics) ===")
+    print(f"{'Config':<20s} | {'ROC-AUC':>7s} | {'PR-AUC':>6s} | {'Opt-F1':>6s} | {'Opt-Thr':>7s} | {'Lift':>8s}")
+    print("-" * 20 + "-+-" + "-" * 7 + "-+-" + "-" * 6 + "-+-" + "-" * 6 + "-+-" + "-" * 7 + "-+-" + "-" * 8)
 
-    # Sort by F1 descending, but put baseline first
+    # Sort by ROC-AUC descending, but put baseline first
     configs = sorted(
         results.items(),
-        key=lambda x: (-1 if x[0] == "baseline" else 0, -x[1].get("f1", 0)),
+        key=lambda x: (-1 if x[0] == "baseline" else 0, -(x[1].get("roc_auc") or 0)),
     )
 
     for name, metrics in configs:
-        f1 = metrics.get("f1", 0)
-        precision = metrics.get("precision", 0)
-        recall = metrics.get("recall", 0)
+        roc_auc = metrics.get("roc_auc")
+        pr_auc = metrics.get("pr_auc")
+        opt_f1 = metrics.get("optimal_f1")
+        opt_thr = metrics.get("optimal_threshold")
         lift = metrics.get("lift_vs_baseline_pct", 0)
+
+        roc_str = f"{roc_auc:.4f}" if roc_auc is not None else "N/A"
+        pr_str = f"{pr_auc:.4f}" if pr_auc is not None else "N/A"
+        opt_f1_str = f"{opt_f1:.4f}" if opt_f1 is not None else "N/A"
+        opt_thr_str = f"{opt_thr:.4f}" if opt_thr is not None else "N/A"
 
         if name == "baseline":
             lift_str = "---"
         else:
             lift_str = f"{lift:+.1f}%"
 
-        print(f"{name:<20s} | {f1:6.4f} | {precision:6.4f} | {recall:6.4f} | {lift_str:>16s}")
+        print(f"{name:<20s} | {roc_str:>7s} | {pr_str:>6s} | {opt_f1_str:>6s} | {opt_thr_str:>7s} | {lift_str:>8s}")
 
 
 def _print_optimal_weights(weight_sweep: dict) -> None:
@@ -64,11 +70,14 @@ def _print_optimal_weights(weight_sweep: dict) -> None:
         print("  No optimal found (empty grid)")
         return
 
-    print(f"\n=== Optimal Weights ({weight_sweep['num_combinations']} combinations tested) ===")
+    roc = optimal.get('roc_auc')
+    opt_f1 = optimal.get('optimal_f1')
+    print(f"\n=== Optimal Weights ({weight_sweep['num_combinations']} combinations tested, ranked by ROC-AUC) ===")
     print(f"  physics={optimal['physics_weight']:.1f}, "
           f"gnn={optimal['gnn_weight']:.1f}, "
           f"cascade={optimal['cascade_weight']:.2f} "
-          f"-> F1={optimal['f1']:.4f}")
+          f"-> ROC-AUC={roc:.4f}" if roc else "N/A",
+          f"Opt-F1={opt_f1:.4f}" if opt_f1 else "")
 
 
 def _print_early_exit_table(early_exit: dict) -> None:
@@ -78,16 +87,19 @@ def _print_early_exit_table(early_exit: dict) -> None:
         return
 
     print("\n=== Early-Exit Trade-off ===")
-    print(f"{'Threshold':>9s} | {'F1':>6s} | {'Latency(ms)':>11s} | {'Exit Rate':>9s}")
-    print("-" * 9 + "-+-" + "-" * 6 + "-+-" + "-" * 11 + "-+-" + "-" * 9)
+    print(f"{'Threshold':>9s} | {'ROC-AUC':>7s} | {'Opt-F1':>6s} | {'Latency(ms)':>11s} | {'Exit Rate':>9s}")
+    print("-" * 9 + "-+-" + "-" * 7 + "-+-" + "-" * 6 + "-+-" + "-" * 11 + "-+-" + "-" * 9)
 
     for point in sweep:
         threshold = point["threshold"]
-        f1 = point["f1"]
+        roc_auc = point.get("roc_auc")
+        opt_f1 = point.get("optimal_f1")
         latency = point["mean_latency_ms"]
         exit_rate = point.get("early_exit_rate")
+        roc_str = f"{roc_auc:.4f}" if roc_auc is not None else "N/A"
+        opt_str = f"{opt_f1:.4f}" if opt_f1 is not None else "N/A"
         exit_str = f"{exit_rate * 100:.1f}%" if exit_rate is not None else "N/A"
-        print(f"{threshold:9.2f} | {f1:6.3f} | {latency:11.1f} | {exit_str:>9s}")
+        print(f"{threshold:9.2f} | {roc_str:>7s} | {opt_str:>6s} | {latency:11.1f} | {exit_str:>9s}")
 
 
 def _print_anomaly_type_table(per_type: dict) -> None:

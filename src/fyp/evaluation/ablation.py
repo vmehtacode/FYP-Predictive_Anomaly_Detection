@@ -233,6 +233,8 @@ class AblationStudy:
 
         baseline_f1 = results["baseline"]["f1"]
 
+        baseline_roc_auc = results["baseline"].get("roc_auc", 0) or 0
+
         # Evaluate each hybrid configuration
         for name, weights in configs.items():
             logger.info("  Evaluating %s (%.1f, %.1f, %.1f)...",
@@ -240,18 +242,30 @@ class AblationStudy:
             cfg = HybridVerifierConfig(ensemble_weights=weights)
             metrics = self._evaluate_config(name, cfg)
 
-            # Compute lift vs baseline
-            if baseline_f1 > 0:
+            # Compute lift vs baseline (using optimal F1 for meaningful comparison)
+            opt_f1 = metrics.get("optimal_f1") or metrics["f1"]
+            baseline_opt_f1 = results["baseline"].get("optimal_f1") or baseline_f1
+            if baseline_opt_f1 > 0:
                 metrics["lift_vs_baseline_pct"] = (
-                    (metrics["f1"] - baseline_f1) / baseline_f1 * 100
+                    (opt_f1 - baseline_opt_f1) / baseline_opt_f1 * 100
                 )
             else:
                 metrics["lift_vs_baseline_pct"] = 0.0
+
+            # ROC-AUC lift
+            cfg_roc = metrics.get("roc_auc") or 0
+            if baseline_roc_auc > 0:
+                metrics["roc_auc_lift_pct"] = (
+                    (cfg_roc - baseline_roc_auc) / baseline_roc_auc * 100
+                )
+            else:
+                metrics["roc_auc_lift_pct"] = 0.0
 
             results[name] = metrics
 
         # Also compute lift for baseline (0%)
         results["baseline"]["lift_vs_baseline_pct"] = 0.0
+        results["baseline"]["roc_auc_lift_pct"] = 0.0
 
         logger.info("Component isolation complete: %d configs evaluated",
                      len(results))
@@ -300,25 +314,33 @@ class AblationStudy:
                     "gnn_weight": w_gnn,
                     "cascade_weight": w_cascade,
                     "f1": metrics["f1"],
+                    "roc_auc": metrics.get("roc_auc"),
+                    "pr_auc": metrics.get("pr_auc"),
+                    "optimal_f1": metrics.get("optimal_f1"),
+                    "optimal_threshold": metrics.get("optimal_threshold"),
                     "accuracy": metrics["accuracy"],
                     "precision": metrics["precision"],
                     "recall": metrics["recall"],
                     "mean_latency_ms": metrics["mean_latency_ms"],
                 })
 
-        # Find optimal (highest F1)
+        # Find optimal by ROC-AUC (threshold-independent ranking)
         if grid_results:
-            optimal = max(grid_results, key=lambda x: x["f1"])
+            optimal = max(
+                grid_results,
+                key=lambda x: x.get("roc_auc") or 0,
+            )
         else:
             optimal = {}
 
         logger.info("Weight sweep complete: %d combinations tested", len(grid_results))
         if optimal:
-            logger.info("  Optimal: physics=%.1f gnn=%.1f cascade=%.2f -> F1=%.4f",
+            logger.info("  Optimal: physics=%.1f gnn=%.1f cascade=%.2f -> ROC-AUC=%.4f, Opt-F1=%.4f",
                         optimal.get("physics_weight", 0),
                         optimal.get("gnn_weight", 0),
                         optimal.get("cascade_weight", 0),
-                        optimal.get("f1", 0))
+                        optimal.get("roc_auc") or 0,
+                        optimal.get("optimal_f1") or 0)
 
         return {
             "grid_results": grid_results,
@@ -358,6 +380,8 @@ class AblationStudy:
             sweep_results.append({
                 "threshold": threshold,
                 "f1": metrics["f1"],
+                "roc_auc": metrics.get("roc_auc"),
+                "optimal_f1": metrics.get("optimal_f1"),
                 "accuracy": metrics["accuracy"],
                 "mean_latency_ms": metrics["mean_latency_ms"],
                 "early_exit_rate": metrics.get("early_exit_rate", 0.0),
