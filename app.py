@@ -91,6 +91,36 @@ def load_graph_data():
     return builder.build_from_metadata(df), df
 
 
+GNN_NUM_NODES = 44  # GNN checkpoint was trained on 44-node graphs
+
+
+@st.cache_resource
+def load_gnn_graph():
+    """Build a 44-node graph compatible with the trained GNN checkpoint.
+
+    GridGraphBuilder produces 49 node_type/feature entries but the GNN
+    was trained on 44 nodes.  We slice tensors and filter edges to
+    produce a Data object the GNN can consume without dimension errors.
+    """
+    from torch_geometric.data import Data
+
+    full_graph, meta_df = load_graph_data()
+    n = GNN_NUM_NODES
+
+    # Slice node attributes to first n nodes
+    node_type = full_graph.node_type[:n]
+    x = full_graph.x[:n] if full_graph.x is not None else None
+
+    # Filter edges: keep only those where both src and dst < n
+    ei = full_graph.edge_index
+    mask = (ei[0] < n) & (ei[1] < n)
+    edge_index = ei[:, mask]
+
+    data = Data(x=x, edge_index=edge_index, node_type=node_type)
+    data.num_nodes = n
+    return data
+
+
 @st.cache_resource
 def load_hybrid_verifier(_graph_data):
     """Load HybridVerifierAgent with trained GNN checkpoint."""
@@ -286,8 +316,8 @@ with tabs[1]:
     st.header("Live anomaly detection")
 
     try:
-        graph_data, _meta_df = load_graph_data()
-        verifier = load_hybrid_verifier(graph_data)
+        gnn_graph = load_gnn_graph()
+        verifier = load_hybrid_verifier(gnn_graph)
         proposer = load_proposer()
     except Exception as e:
         st.error(f"Failed to load models: {e}")
@@ -311,7 +341,7 @@ with tabs[1]:
             scenario = proposer.propose_scenario(
                 context,
                 forecast_horizon=horizon,
-                graph_data=graph_data,
+                graph_data=gnn_graph,
             )
             # Override type and magnitude
             scenario.scenario_type = scenario_type
@@ -320,10 +350,9 @@ with tabs[1]:
             # Apply scenario to create forecast
             forecast_1d = scenario.apply_to_timeseries(context[:horizon])
 
-            # Ensure forecast covers enough nodes for the verifier
-            n_eval = len(graph_data.node_type)
-            eval_input = np.zeros(n_eval)
-            n_copy = min(len(forecast_1d), n_eval)
+            # Pad or trim to GNN node count (44)
+            eval_input = np.zeros(GNN_NUM_NODES)
+            n_copy = min(len(forecast_1d), GNN_NUM_NODES)
             eval_input[:n_copy] = forecast_1d[:n_copy]
 
             # Run through hybrid verifier
@@ -412,8 +441,7 @@ with tabs[1]:
             )
 
             early_exits = breakdown.get("early_exit_count", 0)
-            total_nodes = len(graph_data.node_type)
-            st.markdown(f"**Early exits:** {early_exits}/{total_nodes} nodes")
+            st.markdown(f"**Early exits:** {early_exits}/{GNN_NUM_NODES} nodes")
 
         # -- Expandable details --
         with st.expander("Raw verification details"):
@@ -820,7 +848,7 @@ with tabs[4]:
             from fyp.selfplay.verifier import VerifierAgent
             from fyp.selfplay.trainer import SelfPlayTrainer
 
-            graph_data_train, _ = load_graph_data()
+            gnn_graph_train = load_gnn_graph()
 
             with st.spinner("Initializing agents..."):
                 proposer = ProposerAgent(
@@ -835,7 +863,7 @@ with tabs[4]:
                     proposer=proposer,
                     solver=solver,
                     verifier=base_verifier,
-                    graph_data=graph_data_train,
+                    graph_data=gnn_graph_train,
                 )
 
             progress = st.progress(0)
@@ -858,13 +886,19 @@ with tabs[4]:
 
                 try:
                     metrics = trainer.train_episode(batch)
-                    rewards_history.append(metrics.get("mean_reward", 0))
-                    solver_losses.append(metrics.get("solver_loss", 0))
-                    curriculum_levels.append(
-                        metrics.get("curriculum_level", metrics.get("difficulty", 0))
+                    rewards_history.append(
+                        metrics.get("avg_verification_reward", 0)
                     )
-                    scenario_types.append(
-                        metrics.get("scenario_type", "UNKNOWN")
+                    solver_losses.append(
+                        metrics.get("avg_solver_loss", 0)
+                    )
+                    curriculum_levels.append(
+                        metrics.get("scenario_diversity", 0)
+                    )
+                    # scenarios is a list of types per batch item
+                    ep_scenarios = metrics.get("scenarios", [])
+                    scenario_types.extend(
+                        [str(s) for s in ep_scenarios] if ep_scenarios else ["UNKNOWN"]
                     )
                 except Exception as ep_err:
                     rewards_history.append(0)
@@ -929,17 +963,17 @@ with tabs[4]:
                 fig_cur.add_trace(go.Scatter(
                     x=eps_x, y=curriculum_levels,
                     mode="lines+markers",
-                    name="Curriculum level",
+                    name="Scenario diversity",
                     line=dict(color=STEEL, width=2),
                     marker=dict(size=6),
                 ))
                 fig_cur.update_layout(
                     template=PLOTLY_TEMPLATE,
-                    title="Proposer difficulty per episode",
+                    title="Scenario diversity per episode",
                     height=300,
                     margin=dict(l=50, r=20, t=40, b=40),
                     xaxis_title="Episode",
-                    yaxis_title="Difficulty",
+                    yaxis_title="Diversity (unique types / total)",
                     **DARK_LAYOUT,
                 )
                 st.plotly_chart(fig_cur, use_container_width=True)
