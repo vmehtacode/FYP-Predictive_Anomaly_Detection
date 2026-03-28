@@ -55,13 +55,23 @@ Plans:
 
 ---
 
-### Phase 3: Graph-Aware Proposer — SKIPPED (Future Work)
+### Phase 3: Graph-Aware Proposer
 
 **Goal:** Enhance the Proposer to generate topology-respecting anomaly scenarios where disturbances propagate through connected nodes (e.g., COLD_SNAP cascading through neighbors).
 
 **Requirements:** SELF-01, SELF-02
 
-**Status:** Deferred to future work for thesis. Current ProposerAgent generates sufficient scenario diversity for evaluation.
+**Plans:** 2 plans in 2 waves
+
+Plans:
+- [ ] 03-01-PLAN.md — Graph-aware proposer tests + implementation (TDD)
+- [ ] 03-02-PLAN.md — SelfPlayTrainer integration + integration tests
+
+**Success Criteria:**
+1. ProposerAgent generates topology-aware scenarios using grid graph structure
+2. Anomaly propagation follows physical connectivity (cascades through neighbors)
+3. Generated scenarios integrate with existing SelfPlayTrainer loop
+4. Scenario diversity maintained or improved vs current non-graph proposer
 
 **Depends on:** Phase 2
 
@@ -98,8 +108,8 @@ Plans:
 |-------|------|--------|--------------|----------|
 | 1 | GNN Verifier Foundation | ✓ Complete | GNN-01, GNN-02 | 2/10 |
 | 2 | Hybrid Verifier Integration | ✓ Complete | GNN-03, ENS-01, ENS-02 | 3/10 |
-| 3 | Graph-Aware Proposer | ⏭ Skipped (Future Work) | SELF-01, SELF-02 | 2/10 |
-| 4 | Evaluation Framework | Gap Closure | EVAL-01, EVAL-02, EVAL-03 | 3/10 |
+| 3 | Graph-Aware Proposer | Planned | SELF-01, SELF-02 | 2/10 |
+| 4 | Evaluation Framework | ✓ Complete | EVAL-01, EVAL-02, EVAL-03 | 3/10 |
 
 **Total Coverage:** 10/10 requirements mapped
 
