@@ -66,6 +66,9 @@ ensemble_weights:
 # Early-exit threshold: nodes with physics severity above this
 # skip GNN scoring and use physics score only.  High value (0.9)
 # means only severe violations trigger early exit.
+# Note: physics layer auto-detects data type — voltage scoring is
+# skipped when forecast values are clearly not voltages (e.g.,
+# normalised features), so this threshold only fires on real grid data.
 early_exit_threshold: 0.9
 
 # False-negative penalty ratio: FN (missed anomaly) is penalized

@@ -166,18 +166,33 @@ class PhysicsConstraintLayer:
         )
 
         # --- Voltage scoring ---
-        voltage_scores = np.array(
-            [
-                tolerance_band_score(
-                    float(v),
-                    self.voltage_lower_safe,
-                    self.voltage_upper_safe,
-                    self.voltage_lower_limit,
-                    self.voltage_upper_limit,
-                )
-                for v in v_data
-            ]
-        )
+        # Only scored when explicit voltage_values are provided or the
+        # data is in a plausible voltage range.  Heuristic: if the max
+        # absolute value is below half the lower voltage limit, these
+        # are clearly not voltage readings (e.g., normalised features
+        # or kW values) and would produce spurious severity=1.0.
+        if voltage_values is not None:
+            v_input = v_data
+        elif np.max(np.abs(v_data)) >= self.voltage_lower_limit / 2:
+            v_input = v_data
+        else:
+            v_input = None
+
+        if v_input is not None:
+            voltage_scores = np.array(
+                [
+                    tolerance_band_score(
+                        float(v),
+                        self.voltage_lower_safe,
+                        self.voltage_upper_safe,
+                        self.voltage_lower_limit,
+                        self.voltage_upper_limit,
+                    )
+                    for v in v_input
+                ]
+            )
+        else:
+            voltage_scores = np.zeros(n_nodes)
 
         # --- Capacity scoring ---
         # Only scored when power data is explicitly provided or the
