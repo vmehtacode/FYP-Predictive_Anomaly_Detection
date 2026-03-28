@@ -37,19 +37,20 @@ GREY_BG = "#F5F6F8"
 GREY_TEXT = "#5A6270"
 WHITE = "#FFFFFF"
 
-PLOTLY_TEMPLATE = "plotly_white"
-CHART_COLORS = [STEEL, TEAL, RED, NAVY, "#7B8794", "#C4A35A", "#6C4F9C", "#2CA58D"]
+PLOTLY_TEMPLATE = "plotly_dark"
+CHART_COLORS = [STEEL, TEAL, RED, "#B0BEC5", "#7B8794", "#C4A35A", "#6C4F9C", "#2CA58D"]
 
-# Minimal CSS -- no gradients, no glassmorphism
+# Common layout kwargs for transparent plotly charts on dark Streamlit
+DARK_LAYOUT = dict(
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(0,0,0,0)",
+)
+
+# Minimal CSS -- let Streamlit dark theme handle colors
 st.markdown(
-    f"""
+    """
     <style>
-    .stApp {{ background-color: {WHITE}; }}
-    section[data-testid="stSidebar"] {{ background-color: {GREY_BG}; }}
-    h1, h2, h3 {{ color: {NAVY}; font-weight: 500; }}
-    .stMetric label {{ color: {GREY_TEXT}; }}
-    div[data-testid="stMetricValue"] {{ color: {NAVY}; }}
-    .stTabs [data-baseweb="tab"] {{ color: {NAVY}; }}
+    h1, h2, h3 { font-weight: 500; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -186,11 +187,11 @@ with tabs[0]:
     fig_tl.add_trace(go.Scatter(
         x=xs, y=[0] * len(xs),
         mode="lines+markers+text",
-        marker=dict(size=14, color=NAVY, symbol="circle"),
-        line=dict(color=NAVY, width=2),
+        marker=dict(size=14, color=STEEL, symbol="circle"),
+        line=dict(color=STEEL, width=2),
         text=labels,
         textposition="top center",
-        textfont=dict(size=11, color=NAVY),
+        textfont=dict(size=11, color="#E0E4E8"),
         hovertext=descriptions,
         hoverinfo="text",
         showlegend=False,
@@ -199,7 +200,7 @@ with tabs[0]:
     for i, desc in enumerate(descriptions):
         fig_tl.add_annotation(
             x=i, y=-0.15, text=desc,
-            showarrow=False, font=dict(size=10, color=GREY_TEXT),
+            showarrow=False, font=dict(size=10, color="#A0AAB4"),
             xanchor="center",
         )
 
@@ -209,6 +210,7 @@ with tabs[0]:
         margin=dict(l=20, r=20, t=10, b=60),
         xaxis=dict(showgrid=False, showticklabels=False, zeroline=False),
         yaxis=dict(showgrid=False, showticklabels=False, zeroline=False, range=[-0.4, 0.3]),
+        **DARK_LAYOUT,
     )
     st.plotly_chart(fig_tl, use_container_width=True)
 
@@ -219,20 +221,27 @@ with tabs[0]:
 
     fig_arch = go.Figure()
 
+    # Bright colors that work on dark backgrounds
+    ARCH_BLUE = "#5BA3E6"
+    ARCH_TEAL = "#3DBFA0"
+    ARCH_RED = "#E07050"
+    ARCH_LIGHT = "#B0BEC5"
+    ARCH_WHITE = "#E0E4E8"
+
     boxes = [
-        (0.5, 3, "Forecast input\n(per-node values)", GREY_TEXT),
-        (0.5, 2, "Physics constraint layer\n(voltage, capacity, ramp rate)", STEEL),
-        (2.5, 2, "Early exit?\nphysics > 0.9", RED),
-        (0.5, 1, "GNN verifier\n(GATv2Conv, 3 layers, 4 heads)", TEAL),
-        (0.5, 0, "Cascade logic layer\n(2-hop neighbor propagation)", NAVY),
-        (3.5, 0.5, "Ensemble score\nw_p=0.4, w_g=0.4, w_c=0.2", NAVY),
+        (0.5, 3, "Forecast input\n(per-node values)", ARCH_LIGHT),
+        (0.5, 2, "Physics constraint layer\n(voltage, capacity, ramp rate)", ARCH_BLUE),
+        (2.5, 2, "Early exit?\nphysics > 0.9", ARCH_RED),
+        (0.5, 1, "GNN verifier\n(GATv2Conv, 3 layers, 4 heads)", ARCH_TEAL),
+        (0.5, 0, "Cascade logic layer\n(2-hop neighbor propagation)", ARCH_WHITE),
+        (3.5, 0.5, "Ensemble score\nw_p=0.4, w_g=0.4, w_c=0.2", ARCH_WHITE),
     ]
 
     for x, y, text, color in boxes:
         fig_arch.add_shape(
             type="rect",
             x0=x - 0.9, y0=y - 0.35, x1=x + 0.9, y1=y + 0.35,
-            fillcolor=color, opacity=0.12,
+            fillcolor=color, opacity=0.15,
             line=dict(color=color, width=1.5),
         )
         fig_arch.add_annotation(
@@ -255,15 +264,17 @@ with tabs[0]:
             x=x1, y=y1, ax=x0, ay=y0,
             xref="x", yref="y", axref="x", ayref="y",
             showarrow=True,
-            arrowhead=2, arrowsize=1, arrowwidth=1.5, arrowcolor=GREY_TEXT,
+            arrowhead=2, arrowsize=1, arrowwidth=1.5, arrowcolor=ARCH_LIGHT,
         )
 
     fig_arch.update_layout(
-        template=PLOTLY_TEMPLATE,
+        template="plotly_dark",
         height=350,
         margin=dict(l=10, r=10, t=10, b=10),
         xaxis=dict(showgrid=False, showticklabels=False, zeroline=False, range=[-0.8, 5]),
         yaxis=dict(showgrid=False, showticklabels=False, zeroline=False, range=[-0.6, 3.6]),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
     )
     st.plotly_chart(fig_arch, use_container_width=True)
 
@@ -351,6 +362,7 @@ with tabs[1]:
                 xaxis_title="Interval (30 min)",
                 yaxis_title="Value (kW)",
                 legend=dict(orientation="h", yanchor="bottom", y=1.02),
+                **DARK_LAYOUT,
             )
             st.plotly_chart(fig_fc, use_container_width=True)
 
@@ -381,6 +393,7 @@ with tabs[1]:
                 margin=dict(l=80, r=40, t=10, b=30),
                 xaxis=dict(range=[0, 1.15], title="Score"),
                 yaxis=dict(autorange="reversed"),
+                **DARK_LAYOUT,
             )
             st.plotly_chart(fig_bars, use_container_width=True)
 
@@ -434,9 +447,10 @@ with tabs[2]:
         st.error(f"Failed to load graph: {e}")
         st.stop()
 
-    num_nodes = graph_data.num_nodes
-    num_edges = graph_data.edge_index.shape[1]
     node_types = graph_data.node_type.numpy()
+    # Use node_type length as authoritative count (may differ from num_nodes)
+    num_nodes = len(node_types)
+    num_edges = graph_data.edge_index.shape[1]
 
     # Stats
     s1, s2, s3, s4 = st.columns(4)
@@ -448,7 +462,6 @@ with tabs[2]:
     st.divider()
 
     # Build layout with hierarchy
-    # Use a simple spring layout based on adjacency
     edge_index = graph_data.edge_index.numpy()
 
     # Assign positions by type for clear hierarchy
@@ -470,6 +483,10 @@ with tabs[2]:
         st.session_state.anomaly_scores = np.zeros(num_nodes)
 
     anomaly_scores = st.session_state.anomaly_scores
+    # Ensure anomaly_scores matches current node count
+    if len(anomaly_scores) != num_nodes:
+        anomaly_scores = np.zeros(num_nodes)
+        st.session_state.anomaly_scores = anomaly_scores
 
     # Cascade injection button
     col_btn, col_info = st.columns([1, 3])
@@ -507,17 +524,18 @@ with tabs[2]:
     # Build network figure
     fig_net = go.Figure()
 
-    # Draw edges
+    # Draw edges (skip any that reference out-of-bounds nodes)
     edge_x, edge_y = [], []
     for i in range(edge_index.shape[1]):
         src, dst = edge_index[0, i], edge_index[1, i]
-        edge_x.extend([pos_x[src], pos_x[dst], None])
-        edge_y.extend([pos_y[src], pos_y[dst], None])
+        if src < num_nodes and dst < num_nodes:
+            edge_x.extend([pos_x[src], pos_x[dst], None])
+            edge_y.extend([pos_y[src], pos_y[dst], None])
 
     fig_net.add_trace(go.Scatter(
         x=edge_x, y=edge_y,
         mode="lines",
-        line=dict(width=0.8, color="#C0C8D0"),
+        line=dict(width=0.8, color="#4A5568"),
         hoverinfo="none",
         showlegend=False,
     ))
@@ -538,7 +556,7 @@ with tabs[2]:
                 b = int(29 * (1 - s))
                 node_colors.append(f"rgb({r},{g},{b})")
             else:
-                node_colors.append({0: NAVY, 1: STEEL, 2: TEAL}[ntype])
+                node_colors.append({0: "#B0BEC5", 1: STEEL, 2: TEAL}[ntype])
 
         hover_texts = [
             f"Node {idx} ({type_names[ntype]})\nAnomaly: {anomaly_scores[idx]:.2f}"
@@ -566,6 +584,7 @@ with tabs[2]:
         xaxis=dict(showgrid=False, showticklabels=False, zeroline=False),
         yaxis=dict(showgrid=False, showticklabels=False, zeroline=False),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
+        **DARK_LAYOUT,
     )
     st.plotly_chart(fig_net, use_container_width=True)
 
@@ -611,6 +630,7 @@ with tabs[3]:
         margin=dict(l=140, r=60, t=10, b=40),
         xaxis=dict(range=[0, 1.12], title="ROC-AUC"),
         yaxis=dict(autorange="reversed"),
+        **DARK_LAYOUT,
     )
     st.plotly_chart(fig_roc, use_container_width=True)
 
@@ -699,6 +719,7 @@ with tabs[3]:
                 overlaying="y", range=[0, max(sweep_latency) * 1.3],
             ),
             legend=dict(orientation="h", yanchor="bottom", y=1.02),
+            **DARK_LAYOUT,
         )
         st.plotly_chart(fig_sweep, use_container_width=True)
 
@@ -854,6 +875,7 @@ with tabs[4]:
                     margin=dict(l=50, r=20, t=40, b=40),
                     xaxis_title="Episode",
                     yaxis_title="Reward",
+                    **DARK_LAYOUT,
                 )
                 st.plotly_chart(fig_rew, use_container_width=True)
 
@@ -874,6 +896,7 @@ with tabs[4]:
                     margin=dict(l=50, r=20, t=40, b=40),
                     xaxis_title="Episode",
                     yaxis_title="Loss",
+                    **DARK_LAYOUT,
                 )
                 st.plotly_chart(fig_loss, use_container_width=True)
 
@@ -895,6 +918,7 @@ with tabs[4]:
                     margin=dict(l=50, r=20, t=40, b=40),
                     xaxis_title="Scenario type",
                     yaxis_title="Count",
+                    **DARK_LAYOUT,
                 )
                 st.plotly_chart(fig_dist, use_container_width=True)
 
