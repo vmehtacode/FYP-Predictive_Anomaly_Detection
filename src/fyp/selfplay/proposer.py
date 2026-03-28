@@ -60,6 +60,57 @@ class ScenarioProposal:
             start_idx=start_idx,
         )
 
+    def apply_to_graph_timeseries(self, baseline: np.ndarray) -> np.ndarray:
+        """Transform multi-node baseline consumption with per-node cascade magnitudes.
+
+        For graph-aware scenarios, each node's time series is scaled by its
+        cascade magnitude from metadata["affected_nodes"]. Seed nodes get
+        the full transformation, while neighbors get a blended version
+        proportional to their cascade decay magnitude.
+
+        For non-graph scenarios (no "graph_aware" in metadata), applies the
+        uniform transformation to every node row (same as apply_to_timeseries
+        broadcast across nodes).
+
+        Args:
+            baseline: 2-D array of shape [num_nodes, timesteps]
+
+        Returns:
+            Transformed 2-D array with per-node scenario applied
+        """
+        if baseline.ndim != 2:
+            raise ValueError(
+                f"Expected 2-D array [num_nodes, timesteps], got shape {baseline.shape}"
+            )
+
+        num_nodes, timesteps = baseline.shape
+        result = np.empty_like(baseline)
+
+        if not self.metadata.get("graph_aware", False):
+            # No graph info: apply uniform transformation to every node
+            for i in range(num_nodes):
+                result[i] = self.apply_to_timeseries(baseline[i])
+            return result
+
+        affected_nodes = self.metadata.get("affected_nodes", {})
+
+        for i in range(num_nodes):
+            full_transform = self.apply_to_timeseries(baseline[i])
+            magnitude = affected_nodes.get(i, 0.0)
+
+            if magnitude >= 1.0:
+                # Seed node: full transformation
+                result[i] = full_transform
+            elif magnitude > 0.0:
+                # Cascade neighbor: blended transformation
+                # baseline + magnitude * (transformed - baseline)
+                result[i] = baseline[i] + magnitude * (full_transform - baseline[i])
+            else:
+                # Unaffected node: no transformation
+                result[i] = baseline[i].copy()
+
+        return result
+
     def get_verification_constraints(self) -> list[str]:
         """Return physics constraints this scenario must satisfy.
 
