@@ -7,11 +7,14 @@ forecasting models.
 
 import json
 import logging
+import math
 import random
 from dataclasses import dataclass, field
 from datetime import datetime
 
 import numpy as np
+import torch
+from torch_geometric.data import Data
 
 from fyp.selfplay.utils import (
     apply_scenario_transformation,
@@ -182,6 +185,7 @@ class ProposerAgent:
         conditioning_samples: list[tuple[ScenarioProposal, float]] | None = None,
         forecast_horizon: int = 48,
         current_timestamp: datetime | None = None,
+        graph_data: Data | None = None,
     ) -> ScenarioProposal:
         """Generate a new scenario conditioned on past successful scenarios.
 
@@ -229,6 +233,10 @@ class ProposerAgent:
         # Adjust difficulty based on curriculum
         if self.difficulty_curriculum:
             proposal = self._apply_curriculum_adjustment(proposal)
+
+        # Enrich with graph topology if available
+        if graph_data is not None:
+            self._enrich_with_graph_topology(proposal, graph_data)
 
         logger.debug(
             f"Proposed {scenario_type} scenario: magnitude={params['magnitude']:.2f}, "
@@ -496,6 +504,170 @@ class ProposerAgent:
             learnability *= 0.5
 
         return np.clip(learnability, 0.0, 1.0)
+
+    # ------------------------------------------------------------------
+    # Graph-aware methods (Phase 3)
+    # ------------------------------------------------------------------
+
+    def _enrich_with_graph_topology(
+        self, proposal: ScenarioProposal, graph_data: Data
+    ) -> None:
+        """Enrich proposal with graph topology information.
+
+        Selects seed nodes based on scenario type and node hierarchy,
+        propagates cascade through graph neighbors, and stores per-node
+        magnitude information in proposal metadata.
+
+        Args:
+            proposal: ScenarioProposal to enrich in-place.
+            graph_data: PyG Data with edge_index, node_type, num_nodes.
+        """
+        seed_nodes = self._select_seed_nodes(graph_data, proposal.scenario_type)
+        affected_nodes = self._propagate_through_neighbors(
+            seed_nodes, graph_data, num_hops=2, decay_factor=0.7
+        )
+
+        # Cap affected nodes at 30% of graph
+        max_affected = math.ceil(0.3 * graph_data.num_nodes)
+        if len(affected_nodes) > max_affected:
+            seed_set = set(seed_nodes.tolist())
+            non_seeds = [k for k in affected_nodes if k not in seed_set]
+            # Keep all seeds, randomly subsample non-seeds
+            num_non_seeds_to_keep = max_affected - len(seed_set)
+            if num_non_seeds_to_keep > 0:
+                kept_non_seeds = random.sample(
+                    non_seeds, min(num_non_seeds_to_keep, len(non_seeds))
+                )
+            else:
+                kept_non_seeds = []
+            # Rebuild affected_nodes with only kept nodes
+            capped = {}
+            for k in seed_set:
+                if k in affected_nodes:
+                    capped[k] = affected_nodes[k]
+            for k in kept_non_seeds:
+                capped[k] = affected_nodes[k]
+            affected_nodes = capped
+
+        # Compute actual max cascade depth reached
+        seed_set = set(seed_nodes.tolist())
+        cascade_depth = 0
+        for node, mag in affected_nodes.items():
+            if node not in seed_set:
+                if mag >= 0.7 - 1e-9:
+                    cascade_depth = max(cascade_depth, 1)
+                else:
+                    cascade_depth = max(cascade_depth, 2)
+
+        proposal.metadata["graph_aware"] = True
+        proposal.metadata["seed_nodes"] = seed_nodes.tolist()
+        proposal.metadata["affected_nodes"] = affected_nodes
+        proposal.metadata["num_hops"] = 2
+        proposal.metadata["decay_factor"] = 0.7
+        proposal.metadata["cascade_depth"] = cascade_depth
+
+    def _select_seed_nodes(
+        self, graph_data: Data, scenario_type: str, num_seeds: int = 3
+    ) -> torch.Tensor:
+        """Select seed nodes for cascade based on scenario type and node hierarchy.
+
+        For COLD_SNAP, OUTAGE, and EV_SPIKE: prefer LV feeder nodes (type=2).
+        For PEAK_SHIFT, MISSING_DATA: use all nodes as candidates.
+
+        Args:
+            graph_data: PyG Data with node_type tensor.
+            scenario_type: Scenario type string.
+            num_seeds: Maximum number of seed nodes to select.
+
+        Returns:
+            Tensor of selected node indices.
+        """
+        node_type = graph_data.node_type
+
+        # Filter candidates based on scenario type
+        lv_preferred = {"COLD_SNAP", "OUTAGE", "EV_SPIKE"}
+        if scenario_type in lv_preferred:
+            # Prefer LV feeders (type == 2)
+            candidates = torch.where(node_type == 2)[0]
+            if len(candidates) == 0:
+                # Fallback to all nodes
+                candidates = torch.arange(graph_data.num_nodes)
+        else:
+            candidates = torch.arange(graph_data.num_nodes)
+
+        # Randomly select seeds
+        n_select = min(num_seeds, len(candidates))
+        perm = torch.randperm(len(candidates))[:n_select]
+        return candidates[perm]
+
+    @staticmethod
+    def _build_adjacency(
+        edge_index: torch.Tensor, num_nodes: int
+    ) -> dict[int, list[int]]:
+        """Build adjacency dict from COO edge_index.
+
+        Follows the exact pattern from CascadeLogicLayer._build_adjacency.
+
+        Args:
+            edge_index: Shape [2, num_edges] COO format tensor.
+            num_nodes: Total number of nodes in the graph.
+
+        Returns:
+            Dict mapping each node index to a list of neighbor indices.
+        """
+        adj: dict[int, list[int]] = {i: [] for i in range(num_nodes)}
+        src = edge_index[0].tolist()
+        dst = edge_index[1].tolist()
+        for s, d in zip(src, dst):
+            adj[s].append(d)
+        return adj
+
+    def _propagate_through_neighbors(
+        self,
+        seed_nodes: torch.Tensor,
+        graph_data: Data,
+        num_hops: int = 2,
+        decay_factor: float = 0.7,
+    ) -> dict[int, float]:
+        """Propagate cascade through graph neighbors with decay.
+
+        BFS from seed nodes through num_hops levels. Each hop applies
+        decay_factor to the magnitude.
+
+        Args:
+            seed_nodes: Tensor of seed node indices.
+            graph_data: PyG Data with edge_index and num_nodes.
+            num_hops: Maximum number of hops to propagate.
+            decay_factor: Magnitude decay per hop (default 0.7).
+
+        Returns:
+            Dict mapping node index to cascade magnitude (seed=1.0,
+            hop1=decay, hop2=decay^2, etc.).
+        """
+        adj = self._build_adjacency(graph_data.edge_index, graph_data.num_nodes)
+
+        # Initialize seeds at magnitude 1.0
+        affected_nodes: dict[int, float] = {}
+        current_frontier = set()
+        for s in seed_nodes.tolist():
+            affected_nodes[s] = 1.0
+            current_frontier.add(s)
+
+        visited = set(current_frontier)
+        current_decay = 1.0
+
+        for _hop in range(num_hops):
+            current_decay *= decay_factor
+            next_frontier: set[int] = set()
+            for node in current_frontier:
+                for neighbor in adj[node]:
+                    if neighbor not in visited:
+                        next_frontier.add(neighbor)
+                        visited.add(neighbor)
+                        affected_nodes[neighbor] = current_decay
+            current_frontier = next_frontier
+
+        return affected_nodes
 
     def get_scenario_statistics(self) -> dict:
         """Get statistics about generated scenarios.
