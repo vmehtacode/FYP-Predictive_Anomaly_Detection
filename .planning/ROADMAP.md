@@ -65,7 +65,7 @@ Plans:
 
 Plans:
 - [x] 03-01-PLAN.md — Graph-aware proposer tests + implementation (TDD)
-- [ ] 03-02-PLAN.md — SelfPlayTrainer integration + integration tests
+- [x] 03-02-PLAN.md — SelfPlayTrainer integration + integration tests
 
 **Success Criteria:**
 1. ProposerAgent generates topology-aware scenarios using grid graph structure
@@ -108,7 +108,7 @@ Plans:
 |-------|------|--------|--------------|----------|
 | 1 | GNN Verifier Foundation | ✓ Complete | GNN-01, GNN-02 | 2/10 |
 | 2 | Hybrid Verifier Integration | ✓ Complete | GNN-03, ENS-01, ENS-02 | 3/10 |
-| 3 | Graph-Aware Proposer | Planned | SELF-01, SELF-02 | 2/10 |
+| 3 | Graph-Aware Proposer | ✓ Complete | SELF-01, SELF-02 | 2/10 |
 | 4 | Evaluation Framework | ✓ Complete | EVAL-01, EVAL-02, EVAL-03 | 3/10 |
 
 **Total Coverage:** 10/10 requirements mapped
@@ -118,3 +118,4 @@ Plans:
 *Last updated: 2026-03-28*
 *Phase 1 complete: 2026-01-27 (98.33% accuracy achieved)*
 *Phase 2 complete: 2026-03-28 (49 tests, drop-in verified)*
+*Phase 3 complete: 2026-03-28 (30 graph proposer tests, trainer integration)*
