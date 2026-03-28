@@ -78,7 +78,7 @@ Plans:
 Plans:
 - [x] 04-01-PLAN.md — Evaluation Harness + Synthetic Benchmark
 - [x] 04-02-PLAN.md — Ablation Study + Physics Compliance Analysis
-- [ ] 04-03-PLAN.md — Figures, LaTeX Tables + Test Suite
+- [x] 04-03-PLAN.md — Figures, LaTeX Tables + Test Suite
 
 **Success Criteria:**
 1. Precision, recall, F1, and accuracy computed for HybridVerifierAgent vs baseline VerifierAgent on synthetic anomaly dataset
