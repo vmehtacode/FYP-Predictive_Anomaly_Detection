@@ -161,7 +161,7 @@ with tabs[0]:
     # -- Metric cards --
     m1, m2, m3, m4, m5 = st.columns(5)
     m1.metric("Records ingested", "281M")
-    m2.metric("Datasets", "3 (UK-DALE, LCL, SSEN)")
+    m2.metric("Datasets", "3", help="UK-DALE, LCL, SSEN")
     m3.metric("Tests passing", "212")
     m4.metric("GNN accuracy", "98.33%")
     m5.metric("Inference latency", "16.56 ms")
@@ -303,6 +303,7 @@ with tabs[1]:
     horizon = c3.selectbox("Forecast horizon (intervals)", [24, 48, 96], index=1)
 
     if st.button("Generate and evaluate"):
+      try:
         with st.spinner("Running hybrid verifier pipeline..."):
             # Generate scenario
             np.random.seed(int(time.time()) % 10000)
@@ -319,9 +320,15 @@ with tabs[1]:
             # Apply scenario to create forecast
             forecast_1d = scenario.apply_to_timeseries(context[:horizon])
 
+            # Ensure forecast covers enough nodes for the verifier
+            n_eval = len(graph_data.node_type)
+            eval_input = np.zeros(n_eval)
+            n_copy = min(len(forecast_1d), n_eval)
+            eval_input[:n_copy] = forecast_1d[:n_copy]
+
             # Run through hybrid verifier
             reward, details = verifier.evaluate(
-                forecast_1d[:graph_data.num_nodes],
+                eval_input,
                 scenario=scenario,
                 return_details=True,
             )
@@ -405,7 +412,7 @@ with tabs[1]:
             )
 
             early_exits = breakdown.get("early_exit_count", 0)
-            total_nodes = graph_data.num_nodes
+            total_nodes = len(graph_data.node_type)
             st.markdown(f"**Early exits:** {early_exits}/{total_nodes} nodes")
 
         # -- Expandable details --
@@ -433,6 +440,11 @@ with tabs[1]:
                     meta_display["affected_nodes"] = dict(list(an.items())[:10])
                     meta_display["affected_nodes_truncated"] = f"...{len(an)} total"
             st.json(meta_display)
+      except Exception as e:
+        st.error(f"Anomaly detection failed: {e}")
+        import traceback
+        with st.expander("Traceback"):
+            st.code(traceback.format_exc())
 
 
 # =========================================================================
@@ -708,6 +720,15 @@ with tabs[3]:
             marker=dict(size=8),
             yaxis="y2",
         ))
+        fig_sweep.add_annotation(
+            text="Post-fix: voltage auto-detection heuristic prevents<br>early-exit degradation. See debugging narrative below.",
+            xref="paper", yref="paper",
+            x=0.5, y=0.5,
+            showarrow=False,
+            font=dict(size=11, color="#A0AAB4"),
+            bgcolor="rgba(30,40,50,0.7)",
+            borderpad=8,
+        )
         fig_sweep.update_layout(
             template=PLOTLY_TEMPLATE,
             height=300,
@@ -856,13 +877,14 @@ with tabs[4]:
             status.markdown("Training complete")
 
             # -- Charts --
-            chart_left, chart_right = st.columns(2)
+            row1_left, row1_right = st.columns(2)
 
-            with chart_left:
+            eps_x = list(range(1, num_episodes + 1))
+
+            with row1_left:
                 fig_rew = go.Figure()
                 fig_rew.add_trace(go.Scatter(
-                    x=list(range(1, num_episodes + 1)),
-                    y=rewards_history,
+                    x=eps_x, y=rewards_history,
                     mode="lines+markers",
                     name="Mean reward",
                     line=dict(color=TEAL, width=2),
@@ -879,11 +901,10 @@ with tabs[4]:
                 )
                 st.plotly_chart(fig_rew, use_container_width=True)
 
-            with chart_right:
+            with row1_right:
                 fig_loss = go.Figure()
                 fig_loss.add_trace(go.Scatter(
-                    x=list(range(1, num_episodes + 1)),
-                    y=solver_losses,
+                    x=eps_x, y=solver_losses,
                     mode="lines+markers",
                     name="Solver loss",
                     line=dict(color=RED, width=2),
@@ -900,27 +921,51 @@ with tabs[4]:
                 )
                 st.plotly_chart(fig_loss, use_container_width=True)
 
-            # Scenario distribution
-            if scenario_types:
-                type_counts = {}
-                for t in scenario_types:
-                    type_counts[t] = type_counts.get(t, 0) + 1
+            # Curriculum level chart
+            row2_left, row2_right = st.columns(2)
 
-                fig_dist = go.Figure(go.Bar(
-                    x=list(type_counts.keys()),
-                    y=list(type_counts.values()),
-                    marker_color=CHART_COLORS[:len(type_counts)],
+            with row2_left:
+                fig_cur = go.Figure()
+                fig_cur.add_trace(go.Scatter(
+                    x=eps_x, y=curriculum_levels,
+                    mode="lines+markers",
+                    name="Curriculum level",
+                    line=dict(color=STEEL, width=2),
+                    marker=dict(size=6),
                 ))
-                fig_dist.update_layout(
+                fig_cur.update_layout(
                     template=PLOTLY_TEMPLATE,
-                    title="Scenario type distribution",
-                    height=250,
+                    title="Proposer difficulty per episode",
+                    height=300,
                     margin=dict(l=50, r=20, t=40, b=40),
-                    xaxis_title="Scenario type",
-                    yaxis_title="Count",
+                    xaxis_title="Episode",
+                    yaxis_title="Difficulty",
                     **DARK_LAYOUT,
                 )
-                st.plotly_chart(fig_dist, use_container_width=True)
+                st.plotly_chart(fig_cur, use_container_width=True)
+
+            with row2_right:
+                # Scenario distribution
+                if scenario_types:
+                    type_counts = {}
+                    for t in scenario_types:
+                        type_counts[t] = type_counts.get(t, 0) + 1
+
+                    fig_dist = go.Figure(go.Bar(
+                        x=list(type_counts.keys()),
+                        y=list(type_counts.values()),
+                        marker_color=CHART_COLORS[:len(type_counts)],
+                    ))
+                    fig_dist.update_layout(
+                        template=PLOTLY_TEMPLATE,
+                        title="Scenario type distribution",
+                        height=300,
+                        margin=dict(l=50, r=20, t=40, b=40),
+                        xaxis_title="Scenario type",
+                        yaxis_title="Count",
+                        **DARK_LAYOUT,
+                    )
+                    st.plotly_chart(fig_dist, use_container_width=True)
 
         except Exception as e:
             st.error(f"Training failed: {e}")

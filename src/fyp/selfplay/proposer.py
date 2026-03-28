@@ -666,7 +666,9 @@ class ProposerAgent:
         Returns:
             Dict mapping each node index to a list of neighbor indices.
         """
-        adj: dict[int, list[int]] = {i: [] for i in range(num_nodes)}
+        max_idx = max(edge_index[0].max(), edge_index[1].max()).item()
+        actual_num = max(num_nodes, max_idx + 1)
+        adj: dict[int, list[int]] = {i: [] for i in range(actual_num)}
         src = edge_index[0].tolist()
         dst = edge_index[1].tolist()
         for s, d in zip(src, dst):
