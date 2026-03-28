@@ -8,6 +8,7 @@ Tests cover:
 - Backward compatibility with non-graph proposals
 - Scenario diversity across graph-aware proposals
 - Per-node time-series application via apply_to_graph_timeseries
+- Trainer integration with graph_data forwarding (Plan 03-02)
 
 Requirements: SELF-01 (topology-aware generation), SELF-02 (cascade propagation)
 """
@@ -18,6 +19,7 @@ import json
 import math
 import os
 import tempfile
+from unittest.mock import MagicMock, patch, call
 
 import numpy as np
 import pytest
@@ -25,6 +27,9 @@ import torch
 from torch_geometric.data import Data
 
 from fyp.selfplay.proposer import ProposerAgent, ScenarioProposal
+from fyp.selfplay.solver import SolverAgent
+from fyp.selfplay.verifier import VerifierAgent
+from fyp.selfplay.trainer import SelfPlayTrainer
 
 
 # ============================================================================
@@ -569,3 +574,226 @@ class TestApplyToGraphTimeseries:
         for i in range(5):
             expected = proposal.apply_to_timeseries(baseline[i])
             np.testing.assert_allclose(result[i], expected, rtol=1e-6)
+
+
+# ============================================================================
+# TestTrainerIntegration (Plan 03-02)
+# ============================================================================
+
+
+class TestTrainerIntegration:
+    """Tests for SelfPlayTrainer integration with graph-aware proposer."""
+
+    @pytest.fixture
+    def mock_solver(self):
+        """Create a MagicMock SolverAgent with expected interface."""
+        solver = MagicMock(spec=SolverAgent)
+        solver.predict.return_value = {"0.1": np.ones(48), "0.5": np.ones(48), "0.9": np.ones(48)}
+        solver.train_step.return_value = 0.1
+        solver.compute_forecast_loss.return_value = 0.1
+        solver.use_samples = True
+        return solver
+
+    @pytest.fixture
+    def mock_verifier(self):
+        """Create a MagicMock VerifierAgent with expected interface."""
+        verifier = MagicMock(spec=VerifierAgent)
+        verifier.evaluate.return_value = (0.5, {"physics": {"violations": []}, "temporal": {"violations": []}})
+        return verifier
+
+    @pytest.fixture
+    def mock_proposer_with_graph(self, sample_graph_data):
+        """Create a MagicMock ProposerAgent returning graph-aware scenarios."""
+        proposer = MagicMock(spec=ProposerAgent)
+        proposer.scenario_buffer = []
+        proposer.curriculum_level = 0.0
+
+        # Create a graph-aware scenario that will be returned
+        scenario = ScenarioProposal(
+            scenario_type="COLD_SNAP",
+            magnitude=2.0,
+            duration=48,
+            start_time=None,
+            affected_appliances=["heating"],
+            baseline_context=np.ones(336),
+            difficulty_score=0.5,
+            physics_valid=True,
+            metadata={
+                "start_offset": 0,
+                "graph_aware": True,
+                "seed_nodes": [6, 7],
+                "affected_nodes": {6: 1.0, 7: 1.0, 2: 0.7, 9: 0.49},
+                "num_hops": 2,
+                "decay_factor": 0.7,
+            },
+        )
+        proposer.propose_scenario.return_value = scenario
+        proposer.compute_learnability_reward.return_value = 0.5
+        return proposer
+
+    def test_trainer_accepts_graph_data(
+        self, mock_proposer_with_graph, mock_solver, mock_verifier, sample_graph_data
+    ):
+        """SelfPlayTrainer(proposer, solver, verifier, graph_data=graph_data)
+        stores graph_data on the instance."""
+        trainer = SelfPlayTrainer(
+            mock_proposer_with_graph,
+            mock_solver,
+            mock_verifier,
+            graph_data=sample_graph_data,
+        )
+        assert trainer.graph_data is sample_graph_data
+
+    def test_trainer_passes_graph_data_to_proposer(
+        self, mock_proposer_with_graph, mock_solver, mock_verifier, sample_graph_data
+    ):
+        """During train_episode, proposer.propose_scenario is called with
+        graph_data keyword arg."""
+        trainer = SelfPlayTrainer(
+            mock_proposer_with_graph,
+            mock_solver,
+            mock_verifier,
+            graph_data=sample_graph_data,
+        )
+
+        batch = [(np.random.rand(336), np.random.rand(48)) for _ in range(2)]
+        trainer.train_episode(batch)
+
+        # Check that propose_scenario was called with graph_data
+        for c in mock_proposer_with_graph.propose_scenario.call_args_list:
+            assert "graph_data" in c.kwargs
+            assert c.kwargs["graph_data"] is sample_graph_data
+
+    def test_trainer_without_graph_data_works(
+        self, mock_proposer_with_graph, mock_solver, mock_verifier
+    ):
+        """SelfPlayTrainer without graph_data works as before (backward compat)."""
+        # Create without graph_data (should default to None)
+        trainer = SelfPlayTrainer(
+            mock_proposer_with_graph, mock_solver, mock_verifier
+        )
+        assert trainer.graph_data is None
+
+        batch = [(np.random.rand(336), np.random.rand(48)) for _ in range(2)]
+        metrics = trainer.train_episode(batch)
+
+        # Should complete normally and return valid metrics
+        assert "episode" in metrics
+        assert "scenarios" in metrics
+        assert len(metrics["scenarios"]) == 2
+
+    def test_full_episode_with_graph_data(
+        self, temp_constraints_file, sample_graph_data
+    ):
+        """train_episode returns valid metrics dict with graph-aware scenarios."""
+        proposer = ProposerAgent(
+            temp_constraints_file, difficulty_curriculum=True, random_seed=42
+        )
+        solver = SolverAgent(
+            model_config={
+                "patch_len": 8,
+                "d_model": 16,
+                "n_heads": 2,
+                "n_layers": 1,
+                "forecast_horizon": 48,
+                "max_epochs": 1,
+            },
+            device="cpu",
+            pretrain_epochs=0,
+            use_samples=True,
+        )
+        verifier = VerifierAgent(temp_constraints_file)
+
+        trainer = SelfPlayTrainer(
+            proposer, solver, verifier, graph_data=sample_graph_data
+        )
+
+        batch = [(np.random.rand(336) * 2, np.random.rand(48) * 2) for _ in range(3)]
+        metrics = trainer.train_episode(batch)
+
+        assert metrics["episode"] == 0
+        assert len(metrics["scenarios"]) == 3
+        assert "avg_solver_loss" in metrics
+        assert "avg_verification_reward" in metrics
+        assert "avg_mae" in metrics
+
+    def test_trainer_uses_graph_timeseries_when_graph_data(
+        self, mock_solver, mock_verifier, sample_graph_data
+    ):
+        """When graph_data is present and ground_truth is 2-D, the trainer calls
+        apply_to_graph_timeseries on the scenario."""
+        # Create a mock proposer returning a scenario with a spied apply_to_graph_timeseries
+        proposer = MagicMock(spec=ProposerAgent)
+        proposer.scenario_buffer = []
+        proposer.curriculum_level = 0.0
+
+        scenario = ScenarioProposal(
+            scenario_type="COLD_SNAP",
+            magnitude=2.0,
+            duration=48,
+            start_time=None,
+            affected_appliances=["heating"],
+            baseline_context=np.ones(336),
+            difficulty_score=0.5,
+            physics_valid=True,
+            metadata={
+                "start_offset": 0,
+                "graph_aware": True,
+                "seed_nodes": [0, 1],
+                "affected_nodes": {0: 1.0, 1: 1.0, 2: 0.7},
+            },
+        )
+        # Wrap scenario methods to track calls
+        original_apply_graph = scenario.apply_to_graph_timeseries
+        graph_call_count = [0]
+
+        def tracked_apply_graph(baseline):
+            graph_call_count[0] += 1
+            return original_apply_graph(baseline)
+
+        scenario.apply_to_graph_timeseries = tracked_apply_graph
+        proposer.propose_scenario.return_value = scenario
+        proposer.compute_learnability_reward.return_value = 0.5
+
+        trainer = SelfPlayTrainer(
+            proposer, mock_solver, mock_verifier, graph_data=sample_graph_data
+        )
+
+        # Use 2-D ground truth (num_nodes x timesteps)
+        num_nodes = sample_graph_data.num_nodes
+        batch = [
+            (np.random.rand(336), np.random.rand(num_nodes, 48))
+            for _ in range(2)
+        ]
+        trainer.train_episode(batch)
+
+        # apply_to_graph_timeseries should have been called (once per batch item)
+        assert graph_call_count[0] == 2, (
+            f"Expected apply_to_graph_timeseries called 2 times, got {graph_call_count[0]}"
+        )
+
+
+# ============================================================================
+# TestScenarioDiversity (additional tests from Plan 03-02)
+# ============================================================================
+
+
+class TestScenarioDiversityExtended:
+    """Extended scenario diversity tests for graph-aware proposer."""
+
+    def test_graph_proposer_scenario_type_distribution(
+        self, proposer, sample_graph_data
+    ):
+        """Over 50 proposals with graph_data, at least 3 unique scenario types appear."""
+        context = np.random.rand(336)
+        types_seen = set()
+        for _ in range(50):
+            scenario = proposer.propose_scenario(
+                historical_context=context,
+                graph_data=sample_graph_data,
+                forecast_horizon=48,
+            )
+            types_seen.add(scenario.scenario_type)
+        assert len(types_seen) >= 3, (
+            f"Only saw {types_seen} in 50 proposals, expected >= 3 types"
+        )
