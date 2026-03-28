@@ -93,7 +93,7 @@ Plans:
 | Phase | Name | Status | Requirements | Coverage |
 |-------|------|--------|--------------|----------|
 | 1 | GNN Verifier Foundation | ✓ Complete | GNN-01, GNN-02 | 2/10 |
-| 2 | Hybrid Verifier Integration | Planned | GNN-03, ENS-01, ENS-02 | 3/10 |
+| 2 | Hybrid Verifier Integration | ✓ Complete | GNN-03, ENS-01, ENS-02 | 3/10 |
 | 3 | Graph-Aware Proposer | Not started | SELF-01, SELF-02 | 2/10 |
 | 4 | Evaluation Framework | Not started | EVAL-01, EVAL-02, EVAL-03 | 3/10 |
 
@@ -101,5 +101,6 @@ Plans:
 
 ---
 *Roadmap created: 2026-01-27*
-*Last updated: 2026-02-18*
+*Last updated: 2026-03-28*
 *Phase 1 complete: 2026-01-27 (98.33% accuracy achieved)*
+*Phase 2 complete: 2026-03-28 (49 tests, drop-in verified)*
