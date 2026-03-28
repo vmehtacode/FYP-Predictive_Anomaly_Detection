@@ -20,7 +20,10 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from sklearn.ensemble import IsolationForest
+
 from fyp.baselines.anomaly import DecompositionAnomalyDetector
+from fyp.models.autoencoder import AutoencoderAnomalyDetector
 from fyp.gnn.synthetic_dataset import AnomalyType, SyntheticAnomalyDataset
 from fyp.selfplay.hybrid_verifier import HybridVerifierAgent
 from fyp.selfplay.hybrid_verifier_config import (
@@ -182,6 +185,20 @@ class VerifierBenchmark:
             "type": "decomposition",
         }
 
+        # 7. IsolationForest (sklearn baseline)
+        configs["isolation_forest"] = {
+            "verifier": None,  # Evaluated via _evaluate_sklearn_baseline
+            "description": "Isolation Forest anomaly detector (sklearn)",
+            "type": "isolation_forest",
+        }
+
+        # 8. AutoencoderAnomalyDetector (neural baseline)
+        configs["autoencoder"] = {
+            "verifier": None,  # Evaluated via _evaluate_autoencoder
+            "description": "Temporal autoencoder anomaly detector",
+            "type": "autoencoder",
+        }
+
         return configs
 
     def _create_graph_data(self) -> torch.Tensor:
@@ -266,6 +283,12 @@ class VerifierBenchmark:
         latencies: list[float] = []
         early_exit_counts: list[int] = []
         total_nodes = 0
+
+        if config_type == "isolation_forest":
+            return self._evaluate_sklearn_baseline(name, test_data)
+
+        if config_type == "autoencoder":
+            return self._evaluate_autoencoder(name, test_data)
 
         if config_type == "decomposition":
             return self._evaluate_decomposition(
@@ -404,6 +427,171 @@ class VerifierBenchmark:
             config_type="decomposition",
             description="Statistical baseline (seasonal decomposition)",
         )
+
+    def _evaluate_sklearn_baseline(
+        self,
+        name: str,
+        test_data: list[dict],
+    ) -> dict:
+        """Evaluate IsolationForest (sklearn) on test data.
+
+        Follows the same pattern as _evaluate_decomposition: collect normal
+        data, fit, score all samples with timing, return _compute_metrics().
+
+        Args:
+            name: Configuration name.
+            test_data: List of test sample dicts.
+
+        Returns:
+            Results dict with standard metrics.
+        """
+        # Collect normal samples for fitting
+        normal_forecasts = [
+            s["forecast"] for s in test_data if s["has_anomaly"] == 0
+        ]
+
+        if normal_forecasts:
+            fit_data = np.concatenate(normal_forecasts).reshape(-1, 1)
+        else:
+            fit_data = np.concatenate(
+                [s["forecast"] for s in test_data[:10]],
+            ).reshape(-1, 1)
+
+        # Create and fit IsolationForest
+        model = IsolationForest(
+            contamination=0.05,
+            n_estimators=100,
+            random_state=self.seed,
+        )
+        model.fit(fit_data)
+
+        all_true_labels: list[int] = []
+        all_pred_labels: list[int] = []
+        all_scores: list[float] = []
+        latencies: list[float] = []
+
+        for sample in test_data:
+            forecast = sample["forecast"]
+            has_anomaly = sample["has_anomaly"]
+
+            t0 = time.perf_counter()
+
+            # Reshape for sklearn API (each value is a feature)
+            X = forecast.reshape(-1, 1)
+            raw_scores = -model.decision_function(X)
+
+            # Normalize to [0, 1]
+            score_range = raw_scores.max() - raw_scores.min() + 1e-8
+            scores = np.clip(
+                (raw_scores - raw_scores.min()) / score_range, 0, 1,
+            )
+            sample_score = float(np.mean(scores))
+
+            t1 = time.perf_counter()
+            latencies.append((t1 - t0) * 1000)
+
+            all_scores.append(sample_score)
+            all_true_labels.append(has_anomaly)
+
+            # Binary prediction at threshold 0.5
+            predicted = 1 if sample_score > 0.5 else 0
+            all_pred_labels.append(predicted)
+
+        return self._compute_metrics(
+            name=name,
+            true_labels=all_true_labels,
+            pred_labels=all_pred_labels,
+            scores=all_scores,
+            latencies=latencies,
+            early_exit_counts=[],
+            total_nodes=0,
+            config_type="isolation_forest",
+            description="Isolation Forest anomaly detector (sklearn)",
+        )
+
+    def _evaluate_autoencoder(
+        self,
+        name: str,
+        test_data: list[dict],
+    ) -> dict:
+        """Evaluate AutoencoderAnomalyDetector on test data.
+
+        Follows the same pattern as _evaluate_decomposition: collect normal
+        data, fit, score all samples with timing, return _compute_metrics().
+
+        Args:
+            name: Configuration name.
+            test_data: List of test sample dicts.
+
+        Returns:
+            Results dict with standard metrics, or error dict if training fails.
+        """
+        try:
+            # Create detector with window_size capped to num_nodes
+            window_size = min(48, self.num_nodes)
+            detector = AutoencoderAnomalyDetector(
+                window_size=window_size,
+                hidden_sizes=[32, 16, 8],
+                max_epochs=10,
+                batch_size=32,
+                contamination=0.05,
+            )
+
+            # Collect normal sample forecasts as list[np.ndarray]
+            normal_forecasts = [
+                s["forecast"] for s in test_data if s["has_anomaly"] == 0
+            ]
+            if not normal_forecasts:
+                normal_forecasts = [s["forecast"] for s in test_data[:10]]
+
+            # Fit on normal data
+            detector.fit(normal_forecasts)
+
+            all_true_labels: list[int] = []
+            all_pred_labels: list[int] = []
+            all_scores: list[float] = []
+            latencies: list[float] = []
+
+            for sample in test_data:
+                forecast = sample["forecast"]
+                has_anomaly = sample["has_anomaly"]
+
+                t0 = time.perf_counter()
+                scores = detector.predict_scores(forecast)
+                sample_score = float(np.mean(scores))
+                t1 = time.perf_counter()
+
+                latencies.append((t1 - t0) * 1000)
+
+                all_scores.append(sample_score)
+                all_true_labels.append(has_anomaly)
+
+                # Binary prediction at threshold 0.5
+                predicted = 1 if sample_score > 0.5 else 0
+                all_pred_labels.append(predicted)
+
+            return self._compute_metrics(
+                name=name,
+                true_labels=all_true_labels,
+                pred_labels=all_pred_labels,
+                scores=all_scores,
+                latencies=latencies,
+                early_exit_counts=[],
+                total_nodes=0,
+                config_type="autoencoder",
+                description="Temporal autoencoder anomaly detector",
+            )
+
+        except Exception as e:
+            logger.warning(
+                "AutoencoderAnomalyDetector evaluation failed: %s", e,
+            )
+            return {
+                "name": name,
+                "error": str(e),
+                "type": "autoencoder",
+                "description": "Temporal autoencoder anomaly detector",
+            }
 
     @staticmethod
     def _compute_metrics(

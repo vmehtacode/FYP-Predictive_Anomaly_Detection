@@ -73,12 +73,13 @@ Plans:
 
 **Requirements:** EVAL-01, EVAL-02, EVAL-03
 
-**Plans:** 3 plans in 3 waves
+**Plans:** 4 plans (3 original + 1 gap closure)
 
 Plans:
 - [x] 04-01-PLAN.md — Evaluation Harness + Synthetic Benchmark
 - [x] 04-02-PLAN.md — Ablation Study + Physics Compliance Analysis
 - [x] 04-03-PLAN.md — Figures, LaTeX Tables + Test Suite
+- [ ] 04-04-PLAN.md — Wire IsolationForest + Autoencoder baselines (gap closure)
 
 **Success Criteria:**
 1. Precision, recall, F1, and accuracy computed for HybridVerifierAgent vs baseline VerifierAgent on synthetic anomaly dataset
@@ -98,7 +99,7 @@ Plans:
 | 1 | GNN Verifier Foundation | ✓ Complete | GNN-01, GNN-02 | 2/10 |
 | 2 | Hybrid Verifier Integration | ✓ Complete | GNN-03, ENS-01, ENS-02 | 3/10 |
 | 3 | Graph-Aware Proposer | ⏭ Skipped (Future Work) | SELF-01, SELF-02 | 2/10 |
-| 4 | Evaluation Framework | Planning | EVAL-01, EVAL-02, EVAL-03 | 3/10 |
+| 4 | Evaluation Framework | Gap Closure | EVAL-01, EVAL-02, EVAL-03 | 3/10 |
 
 **Total Coverage:** 10/10 requirements mapped
 
