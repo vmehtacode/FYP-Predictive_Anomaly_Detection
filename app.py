@@ -192,57 +192,9 @@ with tabs[0]:
     m1, m2, m3, m4, m5 = st.columns(5)
     m1.metric("Records ingested", "281M")
     m2.metric("Datasets", "3", help="UK-DALE, LCL, SSEN")
-    m3.metric("Tests passing", "212")
+    m3.metric("Tests passing", "323")
     m4.metric("GNN accuracy", "98.33%")
-    m5.metric("Inference latency", "16.56 ms")
-
-    st.divider()
-
-    # -- Research timeline --
-    st.subheader("Research timeline")
-
-    milestones = [
-        ("Sep 2025", "AZR self-play experiments"),
-        ("Oct-Dec 2025", "Negative result discovery"),
-        ("Jan 2026", "Pivot to GNN verification"),
-        ("Mar 2026", "Hybrid verifier integration"),
-        ("Mar 2026", "Evaluation complete"),
-    ]
-
-    fig_tl = go.Figure()
-    xs = list(range(len(milestones)))
-    labels = [m[0] for m in milestones]
-    descriptions = [m[1] for m in milestones]
-
-    fig_tl.add_trace(go.Scatter(
-        x=xs, y=[0] * len(xs),
-        mode="lines+markers+text",
-        marker=dict(size=14, color=STEEL, symbol="circle"),
-        line=dict(color=STEEL, width=2),
-        text=labels,
-        textposition="top center",
-        textfont=dict(size=11, color="#E0E4E8"),
-        hovertext=descriptions,
-        hoverinfo="text",
-        showlegend=False,
-    ))
-
-    for i, desc in enumerate(descriptions):
-        fig_tl.add_annotation(
-            x=i, y=-0.15, text=desc,
-            showarrow=False, font=dict(size=10, color="#A0AAB4"),
-            xanchor="center",
-        )
-
-    fig_tl.update_layout(
-        template=PLOTLY_TEMPLATE,
-        height=160,
-        margin=dict(l=20, r=20, t=10, b=60),
-        xaxis=dict(showgrid=False, showticklabels=False, zeroline=False),
-        yaxis=dict(showgrid=False, showticklabels=False, zeroline=False, range=[-0.4, 0.3]),
-        **DARK_LAYOUT,
-    )
-    st.plotly_chart(fig_tl, use_container_width=True)
+    m5.metric("Inference latency", "18.70 ms")
 
     st.divider()
 
@@ -300,7 +252,7 @@ with tabs[0]:
 
     _rect(10.5, 20.4, 14.5, 21.6, A_LIGHT, opacity=0.08)
     _label(12.5, 21.2, "SSEN graph topology", A_LIGHT, size=12, bold=True)
-    _label(12.5, 20.7, "G(V, E): 44 nodes, 60 edges, 3 types", A_GREY, size=9)
+    _label(12.5, 20.7, "G(V, E): 44 nodes, 60 edges, 3 types (GNN slice)", A_GREY, size=9)
 
     # Arrows from inputs down
     _arrow(3.5, 20.4, 3.5, 19.6)           # forecast -> physics
@@ -676,6 +628,11 @@ with tabs[2]:
     s3.metric("Primary substations", int((node_types == 0).sum()))
     s4.metric("LV feeders", int((node_types == 2).sum()))
 
+    st.caption(
+        f"Full SSEN topology ({num_nodes} node-type entries, {num_edges} edges). "
+        f"The GNN model operates on a {GNN_NUM_NODES}-node compatible slice "
+        f"(see architecture diagram in System Overview)."
+    )
     st.divider()
 
     # Build layout with hierarchy
@@ -794,6 +751,15 @@ with tabs[2]:
             name=type_names[ntype],
         ))
 
+    # Add explicit legend entry for anomalous nodes when cascade is active
+    if np.any(anomaly_scores > 0.01):
+        fig_net.add_trace(go.Scatter(
+            x=[None], y=[None],
+            mode="markers",
+            marker=dict(size=12, color="#E05030", line=dict(width=1, color=WHITE)),
+            name="Anomalous node",
+        ))
+
     fig_net.update_layout(
         template=PLOTLY_TEMPLATE,
         height=500,
@@ -859,7 +825,15 @@ with tabs[3]:
     with left_abl:
         st.subheader("Component ablation")
 
-        component = ablation_results.get("component_isolation", {})
+        # Use benchmark configs (n=500) for configs shared with bar chart,
+        # plus ablation-only pairwise combos (n=200) for completeness.
+        ablation_keys = {"baseline", "physics_only", "gnn_only", "cascade_only", "hybrid_full"}
+        component = {k: v for k, v in configs.items() if k in ablation_keys}
+        abl_comp = ablation_results.get("component_isolation", {})
+        for k, v in abl_comp.items():
+            if k not in component:
+                component[k] = v
+
         abl_rows = []
         for name, metrics in sorted(
             component.items(),
@@ -883,10 +857,12 @@ with tabs[3]:
     with right_abl:
         st.subheader("Component insights")
 
+        # Pull cascade ROC-AUC from benchmark data for consistency
+        cascade_roc = configs.get("cascade_only", {}).get("roc_auc", 0)
         st.markdown(
             "- **GNN** (GATv2Conv) is the primary discriminator -- "
             "ROC-AUC=1.0 alone and in all combinations\n"
-            "- **Cascade logic** adds real topological signal (ROC-AUC=0.89) "
+            f"- **Cascade logic** adds real topological signal (ROC-AUC={cascade_roc:.4f}) "
             "by detecting neighbor propagation patterns\n"
             "- **Physics layer** provides no discrimination on synthetic data "
             "(ROC-AUC=0.50) -- expected since test data uses normalised "
@@ -1008,8 +984,8 @@ with tabs[4]:
     st.header("Self-play training")
 
     st.markdown(
-        "The propose-solve-verify loop follows the Absolute Zero Reasoner (AZR) "
-        "paradigm. Experiments showed this approach does not outperform baselines "
+        "The propose-solve-verify loop uses a self-play training "
+        "approach. Experiments showed this approach does not outperform baselines "
         "on periodic time series with strong temporal patterns. This negative "
         "result motivated the pivot to topology-aware GNN verification."
     )
