@@ -9,6 +9,7 @@ This experiment tests 4 configurations:
 
 Goal: Show full BDH improves by >10% vs baseline, measure component interactions.
 """
+
 import json
 import sys
 from pathlib import Path

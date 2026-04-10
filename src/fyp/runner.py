@@ -198,7 +198,7 @@ def run_forecasting_baselines(
         timestamps = window["history_timestamps"]
 
         logger.info(
-            f"Processing window {i+1}/{min(len(windows), 10)} for entity {entity_id}"
+            f"Processing window {i + 1}/{min(len(windows), 10)} for entity {entity_id}"
         )
 
         for name, forecaster in forecasters.items():

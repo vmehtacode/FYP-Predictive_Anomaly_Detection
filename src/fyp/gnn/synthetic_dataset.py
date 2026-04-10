@@ -151,17 +151,29 @@ class SyntheticAnomalyDataset:
                 AnomalyType.CASCADE,
                 AnomalyType.RAMP_VIOLATION,
             ]
-            type_idx = int(torch.randint(0, len(anomaly_types), (1,), generator=self._rng).item())
+            type_idx = int(
+                torch.randint(0, len(anomaly_types), (1,), generator=self._rng).item()
+            )
             anomaly_type = anomaly_types[type_idx]
 
             # Select nodes to affect (10-30% of nodes)
-            num_affected = max(1, int(self.num_nodes * (0.1 + 0.2 * torch.rand(1, generator=self._rng).item())))
-            affected_indices = torch.randperm(self.num_nodes, generator=self._rng)[:num_affected]
+            num_affected = max(
+                1,
+                int(
+                    self.num_nodes
+                    * (0.1 + 0.2 * torch.rand(1, generator=self._rng).item())
+                ),
+            )
+            affected_indices = torch.randperm(self.num_nodes, generator=self._rng)[
+                :num_affected
+            ]
             node_mask = torch.zeros(self.num_nodes, dtype=torch.bool)
             node_mask[affected_indices] = True
 
             # Inject anomaly
-            x, y = self._inject_anomaly(x, y, edge_index, node_mask, node_type, anomaly_type)
+            x, y = self._inject_anomaly(
+                x, y, edge_index, node_mask, node_type, anomaly_type
+            )
         else:
             anomaly_type = AnomalyType.NORMAL
 
@@ -196,11 +208,15 @@ class SyntheticAnomalyDataset:
         num_lv = self.num_nodes - num_primary - num_secondary
 
         # Build node type tensor
-        node_type = torch.cat([
-            torch.full((num_primary,), self.NODE_TYPE_PRIMARY, dtype=torch.long),
-            torch.full((num_secondary,), self.NODE_TYPE_SECONDARY, dtype=torch.long),
-            torch.full((num_lv,), self.NODE_TYPE_LV_FEEDER, dtype=torch.long),
-        ])
+        node_type = torch.cat(
+            [
+                torch.full((num_primary,), self.NODE_TYPE_PRIMARY, dtype=torch.long),
+                torch.full(
+                    (num_secondary,), self.NODE_TYPE_SECONDARY, dtype=torch.long
+                ),
+                torch.full((num_lv,), self.NODE_TYPE_LV_FEEDER, dtype=torch.long),
+            ]
+        )
 
         # Build edges (bidirectional)
         edges: list[list[int]] = []
@@ -216,7 +232,9 @@ class SyntheticAnomalyDataset:
         # Each LV feeder connects to one secondary
         lv_start = num_primary + num_secondary
         for lv_idx in range(lv_start, self.num_nodes):
-            s_idx = num_primary + int(torch.randint(0, num_secondary, (1,), generator=self._rng).item())
+            s_idx = num_primary + int(
+                torch.randint(0, num_secondary, (1,), generator=self._rng).item()
+            )
             edges.append([s_idx, lv_idx])
             edges.append([lv_idx, s_idx])
 
@@ -236,7 +254,9 @@ class SyntheticAnomalyDataset:
         """
         # Normal consumption: Gaussian with small variance
         # Mean around 0.5 (normalized consumption)
-        x = 0.5 + 0.2 * torch.randn(self.num_nodes, self.temporal_features, generator=self._rng)
+        x = 0.5 + 0.2 * torch.randn(
+            self.num_nodes, self.temporal_features, generator=self._rng
+        )
 
         # Clamp to realistic range [0, 1]
         x = torch.clamp(x, 0.0, 1.0)
@@ -304,7 +324,9 @@ class SyntheticAnomalyDataset:
         # Generate random magnitude per affected node
         num_affected = node_mask.sum().item()
         min_mag, max_mag = self.SPIKE_MAGNITUDE_RANGE
-        magnitudes = min_mag + (max_mag - min_mag) * torch.rand(num_affected, generator=self._rng)
+        magnitudes = min_mag + (max_mag - min_mag) * torch.rand(
+            num_affected, generator=self._rng
+        )
 
         # Scale by node type (LV feeders get higher spikes)
         affected_types = node_type[node_mask]
@@ -373,7 +395,7 @@ class SyntheticAnomalyDataset:
         # Build adjacency for neighbor lookup
         adj: dict[int, set[int]] = {}
         src, dst = edge_index[0].tolist(), edge_index[1].tolist()
-        for s, d in zip(src, dst):
+        for s, d in zip(src, dst, strict=False):
             if s not in adj:
                 adj[s] = set()
             adj[s].add(d)
@@ -433,7 +455,9 @@ class SyntheticAnomalyDataset:
         """
         if self.temporal_features < 2:
             # Can't create gradient with single feature
-            return self._inject_spike(x, y, node_mask, torch.zeros(self.num_nodes, dtype=torch.long))
+            return self._inject_spike(
+                x, y, node_mask, torch.zeros(self.num_nodes, dtype=torch.long)
+            )
 
         # Create impossible gradient: large jump between consecutive features
         num_affected = node_mask.sum().item()
@@ -444,7 +468,9 @@ class SyntheticAnomalyDataset:
             if t % 2 == 0:
                 pattern[:, t] = 0.1  # Low
             else:
-                pattern[:, t] = 0.1 + self.RAMP_VIOLATION_MAGNITUDE * torch.rand(num_affected, generator=self._rng)
+                pattern[:, t] = 0.1 + self.RAMP_VIOLATION_MAGNITUDE * torch.rand(
+                    num_affected, generator=self._rng
+                )
 
         x[node_mask] = pattern
 
@@ -470,7 +496,9 @@ class SyntheticAnomalyDataset:
             IndexError: If idx is out of range
         """
         if idx < 0 or idx >= self.num_samples:
-            raise IndexError(f"Index {idx} out of range for dataset of size {self.num_samples}")
+            raise IndexError(
+                f"Index {idx} out of range for dataset of size {self.num_samples}"
+            )
         return self._samples[idx]
 
     def get_anomaly_statistics(self) -> dict[str, int]:

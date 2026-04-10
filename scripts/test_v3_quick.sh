@@ -41,7 +41,7 @@ else
 fi
 echo ""
 
-# Check 2: Model weights  
+# Check 2: Model weights
 echo "2. Model Weights Saving:"
 weight_save_count=$(grep -c "✅ Saved PyTorch model weights" results/test_v3.log 2>/dev/null || echo "0")
 if [ $weight_save_count -gt 0 ]; then
@@ -121,4 +121,3 @@ echo "    --output-dir results/large_scale_experiment_v3"
 echo ""
 echo "Estimated runtime: 8-12 hours (run overnight)"
 echo ""
-

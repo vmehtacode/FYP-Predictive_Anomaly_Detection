@@ -7,6 +7,7 @@ the Grid Guardian self-play system works correctly.
 References:
     See docs/selfplay_implementation.md for architecture details.
 """
+
 import sys
 from pathlib import Path
 

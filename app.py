@@ -7,8 +7,6 @@ from __future__ import annotations
 
 import json
 import time
-from datetime import datetime
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -41,10 +39,10 @@ PLOTLY_TEMPLATE = "plotly_dark"
 CHART_COLORS = [STEEL, TEAL, RED, "#B0BEC5", "#7B8794", "#C4A35A", "#6C4F9C", "#2CA58D"]
 
 # Common layout kwargs for transparent plotly charts on dark Streamlit
-DARK_LAYOUT = dict(
-    paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="rgba(0,0,0,0)",
-)
+DARK_LAYOUT = {
+    "paper_bgcolor": "rgba(0,0,0,0)",
+    "plot_bgcolor": "rgba(0,0,0,0)",
+}
 
 # Minimal CSS -- let Streamlit dark theme handle colors
 st.markdown(
@@ -60,13 +58,13 @@ st.markdown(
 # Sidebar
 # ---------------------------------------------------------------------------
 with st.sidebar:
-    st.markdown(f"### Grid Guardian")
+    st.markdown("### Grid Guardian")
     st.caption("Predictive Anomaly Detection for UK Power Grids")
     st.divider()
-    st.markdown(f"**Author:** Vatsal Mehta")
-    st.markdown(f"**Supervisor:** Dr. Farzaneh Farhadi")
-    st.markdown(f"**Institution:** Aston University")
-    st.markdown(f"**Programme:** BSc Computer Science")
+    st.markdown("**Author:** Vatsal Mehta")
+    st.markdown("**Supervisor:** Dr. Farzaneh Farhadi")
+    st.markdown("**Institution:** Aston University")
+    st.markdown("**Programme:** BSc Computer Science")
     st.divider()
     st.caption("Final Year Project 2025-26")
 
@@ -173,13 +171,15 @@ def load_ablation_results():
 # ---------------------------------------------------------------------------
 # Tab definitions
 # ---------------------------------------------------------------------------
-tabs = st.tabs([
-    "System overview",
-    "Live anomaly detection",
-    "Grid topology",
-    "Evaluation results",
-    "Self-play training",
-])
+tabs = st.tabs(
+    [
+        "System overview",
+        "Live anomaly detection",
+        "Grid topology",
+        "Evaluation results",
+        "Self-play training",
+    ]
+)
 
 
 # =========================================================================
@@ -204,15 +204,15 @@ with tabs[0]:
     fig_arch = go.Figure()
 
     # ── Palette ──
-    A_BLUE = "#5BA3E6"     # Physics layer
-    A_TEAL = "#3DBFA0"     # GNN layer
-    A_AMBER = "#D4A843"    # Cascade layer
-    A_RED = "#E07050"      # Early-exit / decision
-    A_GREY = "#8899AA"     # Arrows, secondary text
-    A_LIGHT = "#C8D0D8"    # Input/output text
-    A_WHITE = "#E8ECF0"    # Primary text
-    A_DIM = "#5A6674"      # Faint guides
-    A_ENSEMBLE = "#9B7FD4" # Ensemble
+    A_BLUE = "#5BA3E6"  # Physics layer
+    A_TEAL = "#3DBFA0"  # GNN layer
+    A_AMBER = "#D4A843"  # Cascade layer
+    A_RED = "#E07050"  # Early-exit / decision
+    A_GREY = "#8899AA"  # Arrows, secondary text
+    A_LIGHT = "#C8D0D8"  # Input/output text
+    A_WHITE = "#E8ECF0"  # Primary text
+    A_DIM = "#5A6674"  # Faint guides
+    A_ENSEMBLE = "#9B7FD4"  # Ensemble
 
     # ── Coordinate system ──
     # X: 0..16   Y: 0..22 (top=22)
@@ -221,26 +221,43 @@ with tabs[0]:
 
     def _rect(x0, y0, x1, y1, color, opacity=0.10, width=1.5, dash=None):
         fig_arch.add_shape(
-            type="rect", x0=x0, y0=y0, x1=x1, y1=y1,
-            fillcolor=color, opacity=opacity,
-            line=dict(color=color, width=width, dash=dash),
+            type="rect",
+            x0=x0,
+            y0=y0,
+            x1=x1,
+            y1=y1,
+            fillcolor=color,
+            opacity=opacity,
+            line={"color": color, "width": width, "dash": dash},
         )
 
     def _label(x, y, text, color=A_WHITE, size=11, bold=False, anchor="middle"):
         prefix = "<b>" if bold else ""
         suffix = "</b>" if bold else ""
         fig_arch.add_annotation(
-            x=x, y=y, text=f"{prefix}{text}{suffix}",
-            showarrow=False, font=dict(size=size, color=color),
+            x=x,
+            y=y,
+            text=f"{prefix}{text}{suffix}",
+            showarrow=False,
+            font={"size": size, "color": color},
             xanchor=anchor if anchor != "middle" else "center",
         )
 
-    def _arrow(x0, y0, x1, y1, color=A_GREY, width=1.5, dash=None):
+    def _arrow(x0, y0, x1, y1, color=A_GREY, width=1.5, _dash=None):
         fig_arch.add_annotation(
-            x=x1, y=y1, ax=x0, ay=y0,
-            xref="x", yref="y", axref="x", ayref="y",
-            showarrow=True, arrowhead=2, arrowsize=1.2,
-            arrowwidth=width, arrowcolor=color,
+            x=x1,
+            y=y1,
+            ax=x0,
+            ay=y0,
+            xref="x",
+            yref="y",
+            axref="x",
+            ayref="y",
+            showarrow=True,
+            arrowhead=2,
+            arrowsize=1.2,
+            arrowwidth=width,
+            arrowcolor=color,
         )
 
     # ================================================================
@@ -252,17 +269,27 @@ with tabs[0]:
 
     _rect(10.5, 20.4, 14.5, 21.6, A_LIGHT, opacity=0.08)
     _label(12.5, 21.2, "SSEN graph topology", A_LIGHT, size=12, bold=True)
-    _label(12.5, 20.7, "G(V, E): 44 nodes, 60 edges, 3 types (GNN slice)", A_GREY, size=9)
+    _label(
+        12.5, 20.7, "G(V, E): 44 nodes, 60 edges, 3 types (GNN slice)", A_GREY, size=9
+    )
 
     # Arrows from inputs down
-    _arrow(3.5, 20.4, 3.5, 19.6)           # forecast -> physics
-    _arrow(12.5, 20.4, 12.5, 19.0)         # graph -> right side (long, to GNN)
+    _arrow(3.5, 20.4, 3.5, 19.6)  # forecast -> physics
+    _arrow(12.5, 20.4, 12.5, 19.0)  # graph -> right side (long, to GNN)
 
     # ================================================================
     # LAYER 1: PHYSICS CONSTRAINTS  (y ~ 16-19.5)
     # ================================================================
     _rect(0.3, 15.6, 10.0, 19.5, A_BLUE, opacity=0.06, width=2)
-    _label(0.8, 19.1, "Layer 1: Physics constraints", A_BLUE, size=13, bold=True, anchor="left")
+    _label(
+        0.8,
+        19.1,
+        "Layer 1: Physics constraints",
+        A_BLUE,
+        size=13,
+        bold=True,
+        anchor="left",
+    )
     _label(6.5, 19.1, "Tolerance band scoring", A_GREY, size=9)
 
     # Sub-components
@@ -286,7 +313,9 @@ with tabs[0]:
 
     # Output annotation
     _label(5.15, 16.15, "Output: severity scores per node [0, 1]", A_BLUE, size=9)
-    _label(5.15, 15.75, "Combined = max(voltage, capacity, ramp) per node", A_DIM, size=8)
+    _label(
+        5.15, 15.75, "Combined = max(voltage, capacity, ramp) per node", A_DIM, size=8
+    )
 
     # ================================================================
     # EARLY-EXIT DECISION  (y ~ 13.5-15.5)
@@ -295,7 +324,13 @@ with tabs[0]:
     _rect(2.8, 13.5, 7.2, 15.2, A_RED, opacity=0.10, width=2, dash="dot")
     _label(5.0, 14.7, "Early-exit decision", A_RED, size=12, bold=True)
     _label(5.0, 14.2, "severity > 0.9 ?", A_WHITE, size=11)
-    _label(5.0, 13.7, "Auto-detect: voltage scoring skipped if values < 103V", A_DIM, size=8)
+    _label(
+        5.0,
+        13.7,
+        "Auto-detect: voltage scoring skipped if values < 103V",
+        A_DIM,
+        size=8,
+    )
 
     # Arrow from physics down to decision
     _arrow(5.0, 15.6, 5.0, 15.2)
@@ -320,7 +355,9 @@ with tabs[0]:
     # LAYER 2: GNN VERIFIER  (y ~ 8.5-12.5)
     # ================================================================
     _rect(0.3, 8.2, 10.0, 12.5, A_TEAL, opacity=0.06, width=2)
-    _label(0.8, 12.1, "Layer 2: GNN verifier", A_TEAL, size=13, bold=True, anchor="left")
+    _label(
+        0.8, 12.1, "Layer 2: GNN verifier", A_TEAL, size=13, bold=True, anchor="left"
+    )
     _label(6.5, 12.1, "GATVerifier", A_GREY, size=9)
 
     # Graph topology input arrow from right
@@ -359,7 +396,9 @@ with tabs[0]:
     _label(13.0, 10.1, "topology", A_GREY, size=8)
 
     _rect(0.3, 4.5, 14.5, 7.8, A_AMBER, opacity=0.06, width=2)
-    _label(0.8, 7.4, "Layer 3: Cascade logic", A_AMBER, size=13, bold=True, anchor="left")
+    _label(
+        0.8, 7.4, "Layer 3: Cascade logic", A_AMBER, size=13, bold=True, anchor="left"
+    )
     _label(6.5, 7.4, "Neighbor propagation scoring", A_GREY, size=9)
 
     _rect(0.8, 5.0, 4.8, 7.0, A_AMBER, opacity=0.12)
@@ -385,11 +424,15 @@ with tabs[0]:
     # ================================================================
     # ENSEMBLE  (y ~ 1.5-4)
     # ================================================================
-    _arrow(5.0, 4.5, 5.0, 4.0)   # cascade -> ensemble
-    _arrow(12.5, 13.8, 14.0, 4.0, color=A_RED, width=1, dash="dot")  # early-exit to ensemble
+    _arrow(5.0, 4.5, 5.0, 4.0)  # cascade -> ensemble
+    _arrow(
+        12.5, 13.8, 14.0, 4.0, color=A_RED, width=1, dash="dot"
+    )  # early-exit to ensemble
 
     _rect(0.3, 1.2, 14.5, 4.0, A_ENSEMBLE, opacity=0.06, width=2)
-    _label(0.8, 3.6, "Ensemble combination", A_ENSEMBLE, size=13, bold=True, anchor="left")
+    _label(
+        0.8, 3.6, "Ensemble combination", A_ENSEMBLE, size=13, bold=True, anchor="left"
+    )
 
     # Weight boxes
     _rect(0.8, 1.6, 4.2, 3.2, A_BLUE, opacity=0.10)
@@ -412,7 +455,13 @@ with tabs[0]:
     _label(13.1, 2.4, "(1, 0, 0)", A_WHITE, size=11, bold=True)
     _label(13.1, 1.95, "Physics only", A_GREY, size=8)
 
-    _label(7.5, 1.35, "combined = w_p * physics + w_g * gnn + w_c * cascade    (per node)", A_DIM, size=9)
+    _label(
+        7.5,
+        1.35,
+        "combined = w_p * physics + w_g * gnn + w_c * cascade    (per node)",
+        A_DIM,
+        size=9,
+    )
 
     # ================================================================
     # OUTPUT  (y ~ 0)
@@ -428,10 +477,21 @@ with tabs[0]:
     fig_arch.update_layout(
         template="plotly_dark",
         height=900,
-        margin=dict(l=5, r=5, t=5, b=5),
-        xaxis=dict(showgrid=False, showticklabels=False, zeroline=False, range=XR),
-        yaxis=dict(showgrid=False, showticklabels=False, zeroline=False, range=YR,
-                   scaleanchor="x", scaleratio=1),
+        margin={"l": 5, "r": 5, "t": 5, "b": 5},
+        xaxis={
+            "showgrid": False,
+            "showticklabels": False,
+            "zeroline": False,
+            "range": XR,
+        },
+        yaxis={
+            "showgrid": False,
+            "showticklabels": False,
+            "zeroline": False,
+            "range": YR,
+            "scaleanchor": "x",
+            "scaleratio": 1,
+        },
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
     )
@@ -462,146 +522,163 @@ with tabs[1]:
     horizon = c3.selectbox("Forecast horizon (intervals)", [24, 48, 96], index=1)
 
     if st.button("Generate and evaluate"):
-      try:
-        with st.spinner("Running hybrid verifier pipeline..."):
-            # Generate scenario
-            np.random.seed(int(time.time()) % 10000)
-            context = np.random.rand(336) * 5 + 0.5  # Realistic kW range
-            scenario = proposer.propose_scenario(
-                context,
-                forecast_horizon=horizon,
-                graph_data=gnn_graph,
-            )
-            # Override type and magnitude
-            scenario.scenario_type = scenario_type
-            scenario.magnitude = severity * 3.0
+        try:
+            with st.spinner("Running hybrid verifier pipeline..."):
+                # Generate scenario
+                np.random.seed(int(time.time()) % 10000)
+                context = np.random.rand(336) * 5 + 0.5  # Realistic kW range
+                scenario = proposer.propose_scenario(
+                    context,
+                    forecast_horizon=horizon,
+                    graph_data=gnn_graph,
+                )
+                # Override type and magnitude
+                scenario.scenario_type = scenario_type
+                scenario.magnitude = severity * 3.0
 
-            # Apply scenario to create forecast
-            forecast_1d = scenario.apply_to_timeseries(context[:horizon])
+                # Apply scenario to create forecast
+                forecast_1d = scenario.apply_to_timeseries(context[:horizon])
 
-            # Pad or trim to GNN node count (44)
-            eval_input = np.zeros(GNN_NUM_NODES)
-            n_copy = min(len(forecast_1d), GNN_NUM_NODES)
-            eval_input[:n_copy] = forecast_1d[:n_copy]
+                # Pad or trim to GNN node count (44)
+                eval_input = np.zeros(GNN_NUM_NODES)
+                n_copy = min(len(forecast_1d), GNN_NUM_NODES)
+                eval_input[:n_copy] = forecast_1d[:n_copy]
 
-            # Run through hybrid verifier
-            reward, details = verifier.evaluate(
-                eval_input,
-                scenario=scenario,
-                return_details=True,
-            )
+                # Run through hybrid verifier
+                reward, details = verifier.evaluate(
+                    eval_input,
+                    scenario=scenario,
+                    return_details=True,
+                )
 
-        # -- Results layout --
-        left, right = st.columns([3, 2])
+            # -- Results layout --
+            left, right = st.columns([3, 2])
 
-        with left:
-            st.subheader("Forecast with anomaly injection")
-            fig_fc = go.Figure()
-            t = np.arange(len(forecast_1d))
-            baseline = context[:horizon]
+            with left:
+                st.subheader("Forecast with anomaly injection")
+                fig_fc = go.Figure()
+                t = np.arange(len(forecast_1d))
+                baseline = context[:horizon]
 
-            fig_fc.add_trace(go.Scatter(
-                x=t, y=baseline, name="Baseline",
-                line=dict(color=STEEL, width=1.5, dash="dot"),
-            ))
-            fig_fc.add_trace(go.Scatter(
-                x=t, y=forecast_1d, name="With anomaly",
-                line=dict(color=RED, width=2),
-            ))
+                fig_fc.add_trace(
+                    go.Scatter(
+                        x=t,
+                        y=baseline,
+                        name="Baseline",
+                        line={"color": STEEL, "width": 1.5, "dash": "dot"},
+                    )
+                )
+                fig_fc.add_trace(
+                    go.Scatter(
+                        x=t,
+                        y=forecast_1d,
+                        name="With anomaly",
+                        line={"color": RED, "width": 2},
+                    )
+                )
 
-            # Shade anomalous region
-            start = scenario.metadata.get("start_offset", 0)
-            end = min(start + scenario.duration, len(forecast_1d))
-            fig_fc.add_vrect(
-                x0=start, x1=end,
-                fillcolor=RED, opacity=0.08,
-                line_width=0, annotation_text="Anomaly region",
-                annotation_position="top left",
-                annotation_font_color=RED,
-            )
+                # Shade anomalous region
+                start = scenario.metadata.get("start_offset", 0)
+                end = min(start + scenario.duration, len(forecast_1d))
+                fig_fc.add_vrect(
+                    x0=start,
+                    x1=end,
+                    fillcolor=RED,
+                    opacity=0.08,
+                    line_width=0,
+                    annotation_text="Anomaly region",
+                    annotation_position="top left",
+                    annotation_font_color=RED,
+                )
 
-            fig_fc.update_layout(
-                template=PLOTLY_TEMPLATE,
-                height=350,
-                margin=dict(l=40, r=20, t=30, b=40),
-                xaxis_title="Interval (30 min)",
-                yaxis_title="Value (kW)",
-                legend=dict(orientation="h", yanchor="bottom", y=1.02),
-                **DARK_LAYOUT,
-            )
-            st.plotly_chart(fig_fc, use_container_width=True)
+                fig_fc.update_layout(
+                    template=PLOTLY_TEMPLATE,
+                    height=350,
+                    margin={"l": 40, "r": 20, "t": 30, "b": 40},
+                    xaxis_title="Interval (30 min)",
+                    yaxis_title="Value (kW)",
+                    legend={"orientation": "h", "yanchor": "bottom", "y": 1.02},
+                    **DARK_LAYOUT,
+                )
+                st.plotly_chart(fig_fc, use_container_width=True)
 
-        with right:
-            st.subheader("Layer scores")
+            with right:
+                st.subheader("Layer scores")
 
-            breakdown = details.get("_breakdown", {})
-            physics_mean = float(np.mean(breakdown.get("physics_scores", [0])))
-            gnn_mean = float(np.mean(breakdown.get("gnn_scores", [0])))
-            cascade_mean = float(np.mean(breakdown.get("cascade_scores", [0])))
-            combined_mean = float(np.mean(breakdown.get("combined_scores", [0])))
+                breakdown = details.get("_breakdown", {})
+                physics_mean = float(np.mean(breakdown.get("physics_scores", [0])))
+                gnn_mean = float(np.mean(breakdown.get("gnn_scores", [0])))
+                cascade_mean = float(np.mean(breakdown.get("cascade_scores", [0])))
+                combined_mean = float(np.mean(breakdown.get("combined_scores", [0])))
 
-            layers = ["Physics", "GNN", "Cascade", "Ensemble"]
-            scores = [physics_mean, gnn_mean, cascade_mean, combined_mean]
-            colors = [STEEL if s < 0.5 else RED for s in scores]
+                layers = ["Physics", "GNN", "Cascade", "Ensemble"]
+                scores = [physics_mean, gnn_mean, cascade_mean, combined_mean]
+                colors = [STEEL if s < 0.5 else RED for s in scores]
 
-            fig_bars = go.Figure(go.Bar(
-                y=layers, x=scores,
-                orientation="h",
-                marker_color=colors,
-                text=[f"{s:.3f}" for s in scores],
-                textposition="outside",
-                textfont=dict(size=12),
-            ))
-            fig_bars.update_layout(
-                template=PLOTLY_TEMPLATE,
-                height=250,
-                margin=dict(l=80, r=40, t=10, b=30),
-                xaxis=dict(range=[0, 1.15], title="Score"),
-                yaxis=dict(autorange="reversed"),
-                **DARK_LAYOUT,
-            )
-            st.plotly_chart(fig_bars, use_container_width=True)
+                fig_bars = go.Figure(
+                    go.Bar(
+                        y=layers,
+                        x=scores,
+                        orientation="h",
+                        marker_color=colors,
+                        text=[f"{s:.3f}" for s in scores],
+                        textposition="outside",
+                        textfont={"size": 12},
+                    )
+                )
+                fig_bars.update_layout(
+                    template=PLOTLY_TEMPLATE,
+                    height=250,
+                    margin={"l": 80, "r": 40, "t": 10, "b": 30},
+                    xaxis={"range": [0, 1.15], "title": "Score"},
+                    yaxis={"autorange": "reversed"},
+                    **DARK_LAYOUT,
+                )
+                st.plotly_chart(fig_bars, use_container_width=True)
 
-            reward_color = TEAL if reward > 0 else RED
-            st.markdown(
-                f"**Verification reward:** "
-                f"<span style='color:{reward_color};font-size:1.3em'>{reward:.4f}</span>",
-                unsafe_allow_html=True,
-            )
+                reward_color = TEAL if reward > 0 else RED
+                st.markdown(
+                    f"**Verification reward:** "
+                    f"<span style='color:{reward_color};font-size:1.3em'>{reward:.4f}</span>",
+                    unsafe_allow_html=True,
+                )
 
-            early_exits = breakdown.get("early_exit_count", 0)
-            st.markdown(f"**Early exits:** {early_exits}/{GNN_NUM_NODES} nodes")
+                early_exits = breakdown.get("early_exit_count", 0)
+                st.markdown(f"**Early exits:** {early_exits}/{GNN_NUM_NODES} nodes")
 
-        # -- Expandable details --
-        with st.expander("Raw verification details"):
-            det_physics = details.get("physics", {})
-            det_gnn = details.get("gnn", {})
-            det_cascade = details.get("cascade", {})
-            cols = st.columns(3)
-            cols[0].markdown("**Physics layer**")
-            cols[0].json(det_physics)
-            cols[1].markdown("**GNN layer**")
-            cols[1].json(det_gnn)
-            cols[2].markdown("**Cascade layer**")
-            cols[2].json(det_cascade)
+            # -- Expandable details --
+            with st.expander("Raw verification details"):
+                det_physics = details.get("physics", {})
+                det_gnn = details.get("gnn", {})
+                det_cascade = details.get("cascade", {})
+                cols = st.columns(3)
+                cols[0].markdown("**Physics layer**")
+                cols[0].json(det_physics)
+                cols[1].markdown("**GNN layer**")
+                cols[1].json(det_gnn)
+                cols[2].markdown("**Cascade layer**")
+                cols[2].json(det_cascade)
 
-            st.markdown("**Scenario metadata**")
-            meta_display = {
-                k: (v if not isinstance(v, np.ndarray) else v.tolist())
-                for k, v in scenario.metadata.items()
-            }
-            # Truncate affected_nodes for display
-            if "affected_nodes" in meta_display and isinstance(meta_display["affected_nodes"], dict):
-                an = meta_display["affected_nodes"]
-                if len(an) > 10:
-                    meta_display["affected_nodes"] = dict(list(an.items())[:10])
-                    meta_display["affected_nodes_truncated"] = f"...{len(an)} total"
-            st.json(meta_display)
-      except Exception as e:
-        st.error(f"Anomaly detection failed: {e}")
-        import traceback
-        with st.expander("Traceback"):
-            st.code(traceback.format_exc())
+                st.markdown("**Scenario metadata**")
+                meta_display = {
+                    k: (v if not isinstance(v, np.ndarray) else v.tolist())
+                    for k, v in scenario.metadata.items()
+                }
+                # Truncate affected_nodes for display
+                if "affected_nodes" in meta_display and isinstance(
+                    meta_display["affected_nodes"], dict
+                ):
+                    an = meta_display["affected_nodes"]
+                    if len(an) > 10:
+                        meta_display["affected_nodes"] = dict(list(an.items())[:10])
+                        meta_display["affected_nodes_truncated"] = f"...{len(an)} total"
+                st.json(meta_display)
+        except Exception as e:
+            st.error(f"Anomaly detection failed: {e}")
+            import traceback
+
+            with st.expander("Traceback"):
+                st.code(traceback.format_exc())
 
 
 # =========================================================================
@@ -706,13 +783,16 @@ with tabs[2]:
             edge_x.extend([pos_x[src], pos_x[dst], None])
             edge_y.extend([pos_y[src], pos_y[dst], None])
 
-    fig_net.add_trace(go.Scatter(
-        x=edge_x, y=edge_y,
-        mode="lines",
-        line=dict(width=0.8, color="#4A5568"),
-        hoverinfo="none",
-        showlegend=False,
-    ))
+    fig_net.add_trace(
+        go.Scatter(
+            x=edge_x,
+            y=edge_y,
+            mode="lines",
+            line={"width": 0.8, "color": "#4A5568"},
+            hoverinfo="none",
+            showlegend=False,
+        )
+    )
 
     # Draw nodes by type, colored by anomaly score
     for ntype in [0, 1, 2]:
@@ -737,36 +817,51 @@ with tabs[2]:
             for idx in indices
         ]
 
-        fig_net.add_trace(go.Scatter(
-            x=pos_x[indices],
-            y=pos_y[indices],
-            mode="markers",
-            marker=dict(
-                size=type_sizes[ntype],
-                color=node_colors,
-                line=dict(width=1, color=WHITE),
-            ),
-            text=hover_texts,
-            hoverinfo="text",
-            name=type_names[ntype],
-        ))
+        fig_net.add_trace(
+            go.Scatter(
+                x=pos_x[indices],
+                y=pos_y[indices],
+                mode="markers",
+                marker={
+                    "size": type_sizes[ntype],
+                    "color": node_colors,
+                    "line": {"width": 1, "color": WHITE},
+                },
+                text=hover_texts,
+                hoverinfo="text",
+                name=type_names[ntype],
+            )
+        )
 
     # Add explicit legend entry for anomalous nodes when cascade is active
     if np.any(anomaly_scores > 0.01):
-        fig_net.add_trace(go.Scatter(
-            x=[None], y=[None],
-            mode="markers",
-            marker=dict(size=12, color="#E05030", line=dict(width=1, color=WHITE)),
-            name="Anomalous node",
-        ))
+        fig_net.add_trace(
+            go.Scatter(
+                x=[None],
+                y=[None],
+                mode="markers",
+                marker={
+                    "size": 12,
+                    "color": "#E05030",
+                    "line": {"width": 1, "color": WHITE},
+                },
+                name="Anomalous node",
+            )
+        )
 
     fig_net.update_layout(
         template=PLOTLY_TEMPLATE,
         height=500,
-        margin=dict(l=20, r=20, t=30, b=20),
-        xaxis=dict(showgrid=False, showticklabels=False, zeroline=False),
-        yaxis=dict(showgrid=False, showticklabels=False, zeroline=False),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
+        margin={"l": 20, "r": 20, "t": 30, "b": 20},
+        xaxis={"showgrid": False, "showticklabels": False, "zeroline": False},
+        yaxis={"showgrid": False, "showticklabels": False, "zeroline": False},
+        legend={
+            "orientation": "h",
+            "yanchor": "bottom",
+            "y": 1.02,
+            "xanchor": "center",
+            "x": 0.5,
+        },
         **DARK_LAYOUT,
     )
     st.plotly_chart(fig_net, use_container_width=True)
@@ -799,20 +894,23 @@ with tabs[3]:
     roc_aucs = [c[1].get("roc_auc") or 0 for c in sorted_configs]
     bar_colors = [TEAL if v >= 0.9 else STEEL if v >= 0.5 else RED for v in roc_aucs]
 
-    fig_roc = go.Figure(go.Bar(
-        y=names, x=roc_aucs,
-        orientation="h",
-        marker_color=bar_colors,
-        text=[f"{v:.4f}" for v in roc_aucs],
-        textposition="outside",
-        textfont=dict(size=11),
-    ))
+    fig_roc = go.Figure(
+        go.Bar(
+            y=names,
+            x=roc_aucs,
+            orientation="h",
+            marker_color=bar_colors,
+            text=[f"{v:.4f}" for v in roc_aucs],
+            textposition="outside",
+            textfont={"size": 11},
+        )
+    )
     fig_roc.update_layout(
         template=PLOTLY_TEMPLATE,
         height=350,
-        margin=dict(l=140, r=60, t=10, b=40),
-        xaxis=dict(range=[0, 1.12], title="ROC-AUC"),
-        yaxis=dict(autorange="reversed"),
+        margin={"l": 140, "r": 60, "t": 10, "b": 40},
+        xaxis={"range": [0, 1.12], "title": "ROC-AUC"},
+        yaxis={"autorange": "reversed"},
         **DARK_LAYOUT,
     )
     st.plotly_chart(fig_roc, use_container_width=True)
@@ -827,7 +925,13 @@ with tabs[3]:
 
         # Use benchmark configs (n=500) for configs shared with bar chart,
         # plus ablation-only pairwise combos (n=200) for completeness.
-        ablation_keys = {"baseline", "physics_only", "gnn_only", "cascade_only", "hybrid_full"}
+        ablation_keys = {
+            "baseline",
+            "physics_only",
+            "gnn_only",
+            "cascade_only",
+            "hybrid_full",
+        }
         component = {k: v for k, v in configs.items() if k in ablation_keys}
         abl_comp = ablation_results.get("component_isolation", {})
         for k, v in abl_comp.items():
@@ -842,11 +946,13 @@ with tabs[3]:
         ):
             roc = metrics.get("roc_auc")
             opt_f1 = metrics.get("optimal_f1")
-            abl_rows.append({
-                "Configuration": name,
-                "ROC-AUC": f"{roc:.4f}" if roc is not None else "N/A",
-                "Optimal F1": f"{opt_f1:.4f}" if opt_f1 is not None else "N/A",
-            })
+            abl_rows.append(
+                {
+                    "Configuration": name,
+                    "ROC-AUC": f"{roc:.4f}" if roc is not None else "N/A",
+                    "Optimal F1": f"{opt_f1:.4f}" if opt_f1 is not None else "N/A",
+                }
+            )
 
         st.dataframe(
             pd.DataFrame(abl_rows),
@@ -885,42 +991,52 @@ with tabs[3]:
         sweep_latency = [p.get("mean_latency_ms", 0) for p in sweep]
 
         fig_sweep = go.Figure()
-        fig_sweep.add_trace(go.Scatter(
-            x=thresholds, y=sweep_roc,
-            mode="lines+markers",
-            name="ROC-AUC",
-            line=dict(color=TEAL, width=2),
-            marker=dict(size=8),
-            yaxis="y",
-        ))
-        fig_sweep.add_trace(go.Scatter(
-            x=thresholds, y=sweep_latency,
-            mode="lines+markers",
-            name="Latency (ms)",
-            line=dict(color=STEEL, width=2, dash="dot"),
-            marker=dict(size=8),
-            yaxis="y2",
-        ))
+        fig_sweep.add_trace(
+            go.Scatter(
+                x=thresholds,
+                y=sweep_roc,
+                mode="lines+markers",
+                name="ROC-AUC",
+                line={"color": TEAL, "width": 2},
+                marker={"size": 8},
+                yaxis="y",
+            )
+        )
+        fig_sweep.add_trace(
+            go.Scatter(
+                x=thresholds,
+                y=sweep_latency,
+                mode="lines+markers",
+                name="Latency (ms)",
+                line={"color": STEEL, "width": 2, "dash": "dot"},
+                marker={"size": 8},
+                yaxis="y2",
+            )
+        )
         fig_sweep.add_annotation(
             text="Post-fix: voltage auto-detection heuristic prevents<br>early-exit degradation. See debugging narrative below.",
-            xref="paper", yref="paper",
-            x=0.5, y=0.5,
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
             showarrow=False,
-            font=dict(size=11, color="#A0AAB4"),
+            font={"size": 11, "color": "#A0AAB4"},
             bgcolor="rgba(30,40,50,0.7)",
             borderpad=8,
         )
         fig_sweep.update_layout(
             template=PLOTLY_TEMPLATE,
             height=300,
-            margin=dict(l=60, r=60, t=10, b=40),
-            xaxis=dict(title="Early-exit threshold"),
-            yaxis=dict(title="ROC-AUC", side="left", range=[0, 1.1]),
-            yaxis2=dict(
-                title="Latency (ms)", side="right",
-                overlaying="y", range=[0, max(sweep_latency) * 1.3],
-            ),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02),
+            margin={"l": 60, "r": 60, "t": 10, "b": 40},
+            xaxis={"title": "Early-exit threshold"},
+            yaxis={"title": "ROC-AUC", "side": "left", "range": [0, 1.1]},
+            yaxis2={
+                "title": "Latency (ms)",
+                "side": "right",
+                "overlaying": "y",
+                "range": [0, max(sweep_latency) * 1.3],
+            },
+            legend={"orientation": "h", "yanchor": "bottom", "y": 1.02},
             **DARK_LAYOUT,
         )
         st.plotly_chart(fig_sweep, use_container_width=True)
@@ -998,8 +1114,8 @@ with tabs[4]:
         try:
             from fyp.selfplay.proposer import ProposerAgent
             from fyp.selfplay.solver import SolverAgent
-            from fyp.selfplay.verifier import VerifierAgent
             from fyp.selfplay.trainer import SelfPlayTrainer
+            from fyp.selfplay.verifier import VerifierAgent
 
             gnn_graph_train = load_gnn_graph()
 
@@ -1033,21 +1149,14 @@ with tabs[4]:
 
                 # Generate synthetic training batch
                 batch = [
-                    (np.random.rand(336) * 5, np.random.rand(48) * 5)
-                    for _ in range(3)
+                    (np.random.rand(336) * 5, np.random.rand(48) * 5) for _ in range(3)
                 ]
 
                 try:
                     metrics = trainer.train_episode(batch)
-                    rewards_history.append(
-                        metrics.get("avg_verification_reward", 0)
-                    )
-                    solver_losses.append(
-                        metrics.get("avg_solver_loss", 0)
-                    )
-                    curriculum_levels.append(
-                        metrics.get("scenario_diversity", 0)
-                    )
+                    rewards_history.append(metrics.get("avg_verification_reward", 0))
+                    solver_losses.append(metrics.get("avg_solver_loss", 0))
+                    curriculum_levels.append(metrics.get("scenario_diversity", 0))
                     # scenarios is a list of types per batch item
                     ep_scenarios = metrics.get("scenarios", [])
                     scenario_types.extend(
@@ -1070,18 +1179,21 @@ with tabs[4]:
 
             with row1_left:
                 fig_rew = go.Figure()
-                fig_rew.add_trace(go.Scatter(
-                    x=eps_x, y=rewards_history,
-                    mode="lines+markers",
-                    name="Mean reward",
-                    line=dict(color=TEAL, width=2),
-                    marker=dict(size=6),
-                ))
+                fig_rew.add_trace(
+                    go.Scatter(
+                        x=eps_x,
+                        y=rewards_history,
+                        mode="lines+markers",
+                        name="Mean reward",
+                        line={"color": TEAL, "width": 2},
+                        marker={"size": 6},
+                    )
+                )
                 fig_rew.update_layout(
                     template=PLOTLY_TEMPLATE,
                     title="Verification rewards per episode",
                     height=300,
-                    margin=dict(l=50, r=20, t=40, b=40),
+                    margin={"l": 50, "r": 20, "t": 40, "b": 40},
                     xaxis_title="Episode",
                     yaxis_title="Reward",
                     **DARK_LAYOUT,
@@ -1090,18 +1202,21 @@ with tabs[4]:
 
             with row1_right:
                 fig_loss = go.Figure()
-                fig_loss.add_trace(go.Scatter(
-                    x=eps_x, y=solver_losses,
-                    mode="lines+markers",
-                    name="Solver loss",
-                    line=dict(color=RED, width=2),
-                    marker=dict(size=6),
-                ))
+                fig_loss.add_trace(
+                    go.Scatter(
+                        x=eps_x,
+                        y=solver_losses,
+                        mode="lines+markers",
+                        name="Solver loss",
+                        line={"color": RED, "width": 2},
+                        marker={"size": 6},
+                    )
+                )
                 fig_loss.update_layout(
                     template=PLOTLY_TEMPLATE,
                     title="Solver loss per episode",
                     height=300,
-                    margin=dict(l=50, r=20, t=40, b=40),
+                    margin={"l": 50, "r": 20, "t": 40, "b": 40},
                     xaxis_title="Episode",
                     yaxis_title="Loss",
                     **DARK_LAYOUT,
@@ -1113,18 +1228,21 @@ with tabs[4]:
 
             with row2_left:
                 fig_cur = go.Figure()
-                fig_cur.add_trace(go.Scatter(
-                    x=eps_x, y=curriculum_levels,
-                    mode="lines+markers",
-                    name="Scenario diversity",
-                    line=dict(color=STEEL, width=2),
-                    marker=dict(size=6),
-                ))
+                fig_cur.add_trace(
+                    go.Scatter(
+                        x=eps_x,
+                        y=curriculum_levels,
+                        mode="lines+markers",
+                        name="Scenario diversity",
+                        line={"color": STEEL, "width": 2},
+                        marker={"size": 6},
+                    )
+                )
                 fig_cur.update_layout(
                     template=PLOTLY_TEMPLATE,
                     title="Scenario diversity per episode",
                     height=300,
-                    margin=dict(l=50, r=20, t=40, b=40),
+                    margin={"l": 50, "r": 20, "t": 40, "b": 40},
                     xaxis_title="Episode",
                     yaxis_title="Diversity (unique types / total)",
                     **DARK_LAYOUT,
@@ -1138,16 +1256,18 @@ with tabs[4]:
                     for t in scenario_types:
                         type_counts[t] = type_counts.get(t, 0) + 1
 
-                    fig_dist = go.Figure(go.Bar(
-                        x=list(type_counts.keys()),
-                        y=list(type_counts.values()),
-                        marker_color=CHART_COLORS[:len(type_counts)],
-                    ))
+                    fig_dist = go.Figure(
+                        go.Bar(
+                            x=list(type_counts.keys()),
+                            y=list(type_counts.values()),
+                            marker_color=CHART_COLORS[: len(type_counts)],
+                        )
+                    )
                     fig_dist.update_layout(
                         template=PLOTLY_TEMPLATE,
                         title="Scenario type distribution",
                         height=300,
-                        margin=dict(l=50, r=20, t=40, b=40),
+                        margin={"l": 50, "r": 20, "t": 40, "b": 40},
                         xaxis_title="Scenario type",
                         yaxis_title="Count",
                         **DARK_LAYOUT,
@@ -1157,4 +1277,5 @@ with tabs[4]:
         except Exception as e:
             st.error(f"Training failed: {e}")
             import traceback
+
             st.code(traceback.format_exc())

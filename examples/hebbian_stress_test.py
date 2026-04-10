@@ -7,6 +7,7 @@ for frequently violated constraints.
 
 Goal: Show >5% weight change for at least one constraint type.
 """
+
 import json
 import sys
 from pathlib import Path

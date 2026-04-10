@@ -296,7 +296,7 @@ class CascadeLogicLayer:
         adj: dict[int, list[int]] = {i: [] for i in range(num_nodes)}
         src = edge_index[0].tolist()
         dst = edge_index[1].tolist()
-        for s, d in zip(src, dst):
+        for s, d in zip(src, dst, strict=False):
             adj[s].append(d)
         return adj
 
@@ -328,9 +328,7 @@ class CascadeLogicLayer:
             if not neighbors:
                 continue
             anomalous_neighbors = sum(
-                1
-                for n in neighbors
-                if base_signal[n] > self.propagation_threshold
+                1 for n in neighbors if base_signal[n] > self.propagation_threshold
             )
             cascade_scores[node] = anomalous_neighbors / len(neighbors)
 
@@ -496,7 +494,7 @@ class HybridVerifierAgent:
         self,
         config: HybridVerifierConfig,
         gnn_model: GATVerifier | None = None,
-        graph_data: "torch.Tensor | None" = None,
+        graph_data: torch.Tensor | None = None,
     ) -> None:
         self.config = config
         self.physics_layer = PhysicsConstraintLayer(config.physics)
@@ -526,9 +524,7 @@ class HybridVerifierAgent:
         Args:
             checkpoint_path: Path to the ``.pth`` checkpoint file.
         """
-        checkpoint = torch.load(
-            checkpoint_path, map_location="cpu", weights_only=False
-        )
+        checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
         model = GATVerifier(
             temporal_features=5,
             hidden_channels=64,
@@ -553,7 +549,7 @@ class HybridVerifierAgent:
     def evaluate(
         self,
         forecast: np.ndarray,
-        scenario: "ScenarioProposal | None" = None,
+        scenario: ScenarioProposal | None = None,
         timestamps: np.ndarray | None = None,
         return_details: bool = False,
     ) -> float | tuple[float, dict]:
@@ -645,7 +641,7 @@ class HybridVerifierAgent:
     def _compute_reward(
         self,
         combined_scores: np.ndarray,
-        scenario: "ScenarioProposal | None",
+        scenario: ScenarioProposal | None,
     ) -> float:
         """Compute confidence-based reward in [-1, +1].
 
@@ -705,8 +701,7 @@ class HybridVerifierAgent:
                 ],
                 "weight": breakdown["weights"]["physics"],
                 "weighted_score": (
-                    float(np.mean(physics_scores))
-                    * breakdown["weights"]["physics"]
+                    float(np.mean(physics_scores)) * breakdown["weights"]["physics"]
                 ),
             },
             "gnn": {
@@ -718,8 +713,7 @@ class HybridVerifierAgent:
                 ],
                 "weight": breakdown["weights"]["gnn"],
                 "weighted_score": (
-                    float(np.mean(gnn_scores))
-                    * breakdown["weights"]["gnn"]
+                    float(np.mean(gnn_scores)) * breakdown["weights"]["gnn"]
                 ),
             },
             "cascade": {
@@ -731,8 +725,7 @@ class HybridVerifierAgent:
                 ],
                 "weight": breakdown["weights"]["cascade"],
                 "weighted_score": (
-                    float(np.mean(cascade_scores))
-                    * breakdown["weights"]["cascade"]
+                    float(np.mean(cascade_scores)) * breakdown["weights"]["cascade"]
                 ),
             },
             "_breakdown": {
@@ -756,7 +749,7 @@ class HybridVerifierAgent:
 
 def create_hybrid_verifier(
     config_path: str | Path = "configs/hybrid_verifier.yaml",
-    graph_data: "torch.Tensor | None" = None,
+    graph_data: torch.Tensor | None = None,
 ) -> HybridVerifierAgent:
     """Factory to create HybridVerifierAgent from config file.
 

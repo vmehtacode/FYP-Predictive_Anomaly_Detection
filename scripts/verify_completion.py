@@ -8,6 +8,7 @@ Checks:
 4. Figures generated
 5. Real MAE values obtained
 """
+
 import json
 import sys
 from pathlib import Path

@@ -14,18 +14,17 @@ from __future__ import annotations
 import json
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
 import torch
-
 from sklearn.ensemble import IsolationForest
-from sklearn.metrics import roc_auc_score, roc_curve, precision_recall_curve, auc
+from sklearn.metrics import auc, precision_recall_curve, roc_auc_score, roc_curve
 
 from fyp.baselines.anomaly import DecompositionAnomalyDetector
-from fyp.models.autoencoder import AutoencoderAnomalyDetector
 from fyp.gnn.synthetic_dataset import AnomalyType, SyntheticAnomalyDataset
+from fyp.models.autoencoder import AutoencoderAnomalyDetector
 from fyp.selfplay.hybrid_verifier import HybridVerifierAgent
 from fyp.selfplay.hybrid_verifier_config import (
     EnsembleWeightsConfig,
@@ -100,7 +99,7 @@ class VerifierBenchmark:
         # 2. HybridVerifierAgent with full ensemble (default weights)
         hybrid_config = HybridVerifierConfig()
         gnn_checkpoint = Path(self.DEFAULT_GNN_CHECKPOINT)
-        has_gnn = gnn_checkpoint.exists()
+        gnn_checkpoint.exists()
 
         # Generate a sample graph for graph_data (shared across hybrid configs)
         graph_data = self._create_graph_data()
@@ -121,7 +120,9 @@ class VerifierBenchmark:
         # 3. Physics-only ablation
         physics_only_config = HybridVerifierConfig(
             ensemble_weights=EnsembleWeightsConfig(
-                physics=1.0, gnn=0.0, cascade=0.0,
+                physics=1.0,
+                gnn=0.0,
+                cascade=0.0,
             ),
         )
         try:
@@ -140,7 +141,9 @@ class VerifierBenchmark:
         # 4. GNN-only ablation
         gnn_only_config = HybridVerifierConfig(
             ensemble_weights=EnsembleWeightsConfig(
-                physics=0.0, gnn=1.0, cascade=0.0,
+                physics=0.0,
+                gnn=1.0,
+                cascade=0.0,
             ),
         )
         try:
@@ -159,7 +162,9 @@ class VerifierBenchmark:
         # 5. Cascade-only ablation
         cascade_only_config = HybridVerifierConfig(
             ensemble_weights=EnsembleWeightsConfig(
-                physics=0.0, gnn=0.0, cascade=1.0,
+                physics=0.0,
+                gnn=0.0,
+                cascade=1.0,
             ),
         )
         try:
@@ -247,14 +252,16 @@ class VerifierBenchmark:
             # Per-node labels for more granular analysis
             node_labels = sample.y.numpy()
 
-            test_data.append({
-                "forecast": forecast,
-                "node_labels": node_labels,
-                "has_anomaly": has_anomaly,
-                "anomaly_type": sample.anomaly_type.name,
-                "edge_index": sample.edge_index,
-                "node_type": sample.node_type,
-            })
+            test_data.append(
+                {
+                    "forecast": forecast,
+                    "node_labels": node_labels,
+                    "has_anomaly": has_anomaly,
+                    "anomaly_type": sample.anomaly_type.name,
+                    "edge_index": sample.edge_index,
+                    "node_type": sample.node_type,
+                }
+            )
 
         return test_data
 
@@ -293,7 +300,9 @@ class VerifierBenchmark:
 
         if config_type == "decomposition":
             return self._evaluate_decomposition(
-                name, verifier, test_data,
+                name,
+                verifier,
+                test_data,
             )
 
         # Verifier-type configs (baseline or hybrid)
@@ -304,7 +313,8 @@ class VerifierBenchmark:
             # Time the evaluation
             t0 = time.perf_counter()
             result = verifier.evaluate(
-                forecast, return_details=True,
+                forecast,
+                return_details=True,
             )
             t1 = time.perf_counter()
 
@@ -380,9 +390,7 @@ class VerifierBenchmark:
             Results dict with standard metrics.
         """
         # Collect normal samples for fitting
-        normal_forecasts = [
-            s["forecast"] for s in test_data if s["has_anomaly"] == 0
-        ]
+        normal_forecasts = [s["forecast"] for s in test_data if s["has_anomaly"] == 0]
 
         if normal_forecasts:
             # Concatenate all normal forecasts for fitting
@@ -447,9 +455,7 @@ class VerifierBenchmark:
             Results dict with standard metrics.
         """
         # Collect normal samples for fitting
-        normal_forecasts = [
-            s["forecast"] for s in test_data if s["has_anomaly"] == 0
-        ]
+        normal_forecasts = [s["forecast"] for s in test_data if s["has_anomaly"] == 0]
 
         if normal_forecasts:
             fit_data = np.concatenate(normal_forecasts).reshape(-1, 1)
@@ -484,7 +490,9 @@ class VerifierBenchmark:
             # Normalize to [0, 1]
             score_range = raw_scores.max() - raw_scores.min() + 1e-8
             scores = np.clip(
-                (raw_scores - raw_scores.min()) / score_range, 0, 1,
+                (raw_scores - raw_scores.min()) / score_range,
+                0,
+                1,
             )
             sample_score = float(np.mean(scores))
 
@@ -589,7 +597,8 @@ class VerifierBenchmark:
 
         except Exception as e:
             logger.warning(
-                "AutoencoderAnomalyDetector evaluation failed: %s", e,
+                "AutoencoderAnomalyDetector evaluation failed: %s",
+                e,
             )
             return {
                 "name": name,
@@ -660,7 +669,8 @@ class VerifierBenchmark:
 
             try:
                 pr_precision, pr_recall, _ = precision_recall_curve(
-                    y_true, y_scores,
+                    y_true,
+                    y_scores,
                 )
                 pr_auc_val = float(auc(pr_recall, pr_precision))
             except ValueError:
@@ -688,7 +698,8 @@ class VerifierBenchmark:
                 opt_recall = tp_o / (tp_o + fn_o) if (tp_o + fn_o) > 0 else 0.0
                 opt_f1 = (
                     2 * opt_precision * opt_recall / (opt_precision + opt_recall)
-                    if (opt_precision + opt_recall) > 0 else 0.0
+                    if (opt_precision + opt_recall) > 0
+                    else 0.0
                 )
             except (ValueError, IndexError):
                 optimal_threshold = None
@@ -755,7 +766,11 @@ class VerifierBenchmark:
         Returns:
             Dict with "metadata", "configurations", "test_data_stats".
         """
-        logger.info("Starting VerifierBenchmark (seed=%d, samples=%d)", self.seed, self.num_samples)
+        logger.info(
+            "Starting VerifierBenchmark (seed=%d, samples=%d)",
+            self.seed,
+            self.num_samples,
+        )
 
         # 1. Generate test data (once, shared across all configs)
         logger.info("Generating test data...")
@@ -779,7 +794,11 @@ class VerifierBenchmark:
         # 2. Create configurations
         logger.info("Creating verifier configurations...")
         configurations = self._create_configurations()
-        logger.info("Created %d configurations: %s", len(configurations), list(configurations.keys()))
+        logger.info(
+            "Created %d configurations: %s",
+            len(configurations),
+            list(configurations.keys()),
+        )
 
         # 3. Evaluate each configuration
         results: dict[str, dict] = {}
@@ -805,7 +824,7 @@ class VerifierBenchmark:
 
         # 4. Assemble final results
         metadata = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "seed": self.seed,
             "num_samples": self.num_samples,
             "num_nodes": self.num_nodes,
@@ -835,9 +854,9 @@ class VerifierBenchmark:
             """Custom JSON serializer for numpy and datetime types."""
             if isinstance(obj, np.ndarray):
                 return obj.tolist()
-            if isinstance(obj, (np.integer,)):
+            if isinstance(obj, np.integer):
                 return int(obj)
-            if isinstance(obj, (np.floating,)):
+            if isinstance(obj, np.floating):
                 return float(obj)
             if isinstance(obj, np.bool_):
                 return bool(obj)

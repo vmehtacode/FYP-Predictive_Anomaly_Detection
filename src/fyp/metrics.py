@@ -1,6 +1,5 @@
 """Metrics for forecasting and anomaly detection."""
 
-
 import numpy as np
 
 

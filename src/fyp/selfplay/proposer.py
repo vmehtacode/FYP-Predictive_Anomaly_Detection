@@ -665,7 +665,7 @@ class ProposerAgent:
         adj: dict[int, list[int]] = {i: [] for i in range(actual_num)}
         src = edge_index[0].tolist()
         dst = edge_index[1].tolist()
-        for s, d in zip(src, dst):
+        for s, d in zip(src, dst, strict=False):
             adj[s].append(d)
         return adj
 

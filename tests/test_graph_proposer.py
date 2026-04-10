@@ -19,7 +19,7 @@ import json
 import math
 import os
 import tempfile
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
@@ -28,9 +28,8 @@ from torch_geometric.data import Data
 
 from fyp.selfplay.proposer import ProposerAgent, ScenarioProposal
 from fyp.selfplay.solver import SolverAgent
-from fyp.selfplay.verifier import VerifierAgent
 from fyp.selfplay.trainer import SelfPlayTrainer
-
+from fyp.selfplay.verifier import VerifierAgent
 
 # ============================================================================
 # Fixtures
@@ -69,11 +68,13 @@ def sample_graph_data():
     num_nodes = 20
 
     # Node types
-    node_type = torch.cat([
-        torch.full((2,), 0, dtype=torch.long),   # primary
-        torch.full((4,), 1, dtype=torch.long),   # secondary
-        torch.full((14,), 2, dtype=torch.long),  # LV feeders
-    ])
+    node_type = torch.cat(
+        [
+            torch.full((2,), 0, dtype=torch.long),  # primary
+            torch.full((4,), 1, dtype=torch.long),  # secondary
+            torch.full((14,), 2, dtype=torch.long),  # LV feeders
+        ]
+    )
 
     # Build edges: tree structure
     edges = []
@@ -167,9 +168,7 @@ class TestGraphAwareProposer:
         assert isinstance(scenario, ScenarioProposal)
         assert scenario.metadata.get("graph_aware") is True
 
-    def test_propose_with_graph_data_has_seed_nodes(
-        self, proposer, sample_graph_data
-    ):
+    def test_propose_with_graph_data_has_seed_nodes(self, proposer, sample_graph_data):
         """metadata['seed_nodes'] is a non-empty list of ints."""
         context = np.random.rand(336)
         scenario = proposer.propose_scenario(
@@ -243,7 +242,13 @@ class TestSeedNodeSelection:
 
     def test_seed_nodes_within_graph_bounds(self, proposer, sample_graph_data):
         """All seed indices are < graph_data.num_nodes."""
-        for scenario_type in ["COLD_SNAP", "OUTAGE", "EV_SPIKE", "PEAK_SHIFT", "MISSING_DATA"]:
+        for scenario_type in [
+            "COLD_SNAP",
+            "OUTAGE",
+            "EV_SPIKE",
+            "PEAK_SHIFT",
+            "MISSING_DATA",
+        ]:
             seeds = proposer._select_seed_nodes(sample_graph_data, scenario_type)
             for s in seeds.tolist():
                 assert 0 <= s < sample_graph_data.num_nodes
@@ -257,9 +262,7 @@ class TestSeedNodeSelection:
 class TestCascadePropagation:
     """Tests for cascade propagation through graph neighbors."""
 
-    def test_affected_nodes_follow_connectivity(
-        self, proposer, linear_graph_data
-    ):
+    def test_affected_nodes_follow_connectivity(self, proposer, linear_graph_data):
         """Every affected node (not a seed) is a graph neighbor of another affected node."""
         # Use node 0 as seed in linear graph A--B--C--D--E
         seed_nodes = torch.tensor([0])
@@ -276,9 +279,9 @@ class TestCascadePropagation:
                 continue
             # Must be neighbor of at least one other affected node
             neighbors = set(adj[node])
-            assert neighbors & set(affected.keys()), (
-                f"Node {node} is not adjacent to any other affected node"
-            )
+            assert neighbors & set(
+                affected.keys()
+            ), f"Node {node} is not adjacent to any other affected node"
 
     def test_cascade_decay_applied(self, proposer, linear_graph_data):
         """Nodes at hop 1 get magnitude 0.7, nodes at hop 2 get magnitude 0.49."""
@@ -363,9 +366,9 @@ class TestScenarioTypeCascade:
             if scenario.scenario_type == "COLD_SNAP":
                 seeds = scenario.metadata["seed_nodes"]
                 affected = scenario.metadata["affected_nodes"]
-                assert len(affected) > len(seeds), (
-                    "COLD_SNAP cascade should affect more nodes than just seeds"
-                )
+                assert len(affected) > len(
+                    seeds
+                ), "COLD_SNAP cascade should affect more nodes than just seeds"
                 return
         # If no COLD_SNAP generated, that's okay - test is statistical
         pytest.skip("No COLD_SNAP generated in 50 attempts")
@@ -382,9 +385,9 @@ class TestScenarioTypeCascade:
             if scenario.scenario_type == "OUTAGE":
                 seeds = scenario.metadata["seed_nodes"]
                 affected = scenario.metadata["affected_nodes"]
-                assert len(affected) > len(seeds), (
-                    "OUTAGE cascade should affect more nodes than just seeds"
-                )
+                assert len(affected) > len(
+                    seeds
+                ), "OUTAGE cascade should affect more nodes than just seeds"
                 return
         pytest.skip("No OUTAGE generated in 50 attempts")
 
@@ -432,6 +435,7 @@ class TestBackwardCompat:
 
         # Call with current_timestamp
         from datetime import datetime
+
         s3 = proposer.propose_scenario(
             historical_context=context,
             current_timestamp=datetime(2026, 1, 15, 12, 0),
@@ -447,9 +451,7 @@ class TestBackwardCompat:
 class TestScenarioDiversity:
     """Tests for diversity of graph-aware scenario generation."""
 
-    def test_graph_proposer_produces_multiple_types(
-        self, proposer, sample_graph_data
-    ):
+    def test_graph_proposer_produces_multiple_types(self, proposer, sample_graph_data):
         """Running 20 proposals produces at least 2 different scenario_types."""
         context = np.random.rand(336)
         types_seen = set()
@@ -460,9 +462,9 @@ class TestScenarioDiversity:
                 forecast_horizon=48,
             )
             types_seen.add(scenario.scenario_type)
-        assert len(types_seen) >= 2, (
-            f"Only saw {types_seen} in 20 proposals, expected >= 2 types"
-        )
+        assert (
+            len(types_seen) >= 2
+        ), f"Only saw {types_seen} in 20 proposals, expected >= 2 types"
 
 
 # ============================================================================
@@ -473,9 +475,7 @@ class TestScenarioDiversity:
 class TestAffectedNodesCap:
     """Tests for the 30% affected nodes cap."""
 
-    def test_affected_nodes_capped_at_30_percent(
-        self, proposer, sample_graph_data
-    ):
+    def test_affected_nodes_capped_at_30_percent(self, proposer, sample_graph_data):
         """len(affected_nodes) <= ceil(0.3 * graph_data.num_nodes)."""
         context = np.random.rand(336)
         max_allowed = math.ceil(0.3 * sample_graph_data.num_nodes)
@@ -486,9 +486,9 @@ class TestAffectedNodesCap:
                 forecast_horizon=48,
             )
             affected = scenario.metadata.get("affected_nodes", {})
-            assert len(affected) <= max_allowed, (
-                f"Got {len(affected)} affected nodes, cap is {max_allowed}"
-            )
+            assert (
+                len(affected) <= max_allowed
+            ), f"Got {len(affected)} affected nodes, cap is {max_allowed}"
 
 
 # ============================================================================
@@ -588,7 +588,11 @@ class TestTrainerIntegration:
     def mock_solver(self):
         """Create a MagicMock SolverAgent with expected interface."""
         solver = MagicMock(spec=SolverAgent)
-        solver.predict.return_value = {"0.1": np.ones(48), "0.5": np.ones(48), "0.9": np.ones(48)}
+        solver.predict.return_value = {
+            "0.1": np.ones(48),
+            "0.5": np.ones(48),
+            "0.9": np.ones(48),
+        }
         solver.train_step.return_value = 0.1
         solver.compute_forecast_loss.return_value = 0.1
         solver.use_samples = True
@@ -598,7 +602,10 @@ class TestTrainerIntegration:
     def mock_verifier(self):
         """Create a MagicMock VerifierAgent with expected interface."""
         verifier = MagicMock(spec=VerifierAgent)
-        verifier.evaluate.return_value = (0.5, {"physics": {"violations": []}, "temporal": {"violations": []}})
+        verifier.evaluate.return_value = (
+            0.5,
+            {"physics": {"violations": []}, "temporal": {"violations": []}},
+        )
         return verifier
 
     @pytest.fixture
@@ -669,9 +676,7 @@ class TestTrainerIntegration:
     ):
         """SelfPlayTrainer without graph_data works as before (backward compat)."""
         # Create without graph_data (should default to None)
-        trainer = SelfPlayTrainer(
-            mock_proposer_with_graph, mock_solver, mock_verifier
-        )
+        trainer = SelfPlayTrainer(mock_proposer_with_graph, mock_solver, mock_verifier)
         assert trainer.graph_data is None
 
         batch = [(np.random.rand(336), np.random.rand(48)) for _ in range(2)]
@@ -765,16 +770,13 @@ class TestTrainerIntegration:
         # Use 2-D ground truth (num_nodes x timesteps) to trigger
         # the graph_timeseries branch
         num_nodes = sample_graph_data.num_nodes
-        batch = [
-            (np.random.rand(336), np.random.rand(num_nodes, 48))
-            for _ in range(2)
-        ]
+        batch = [(np.random.rand(336), np.random.rand(num_nodes, 48)) for _ in range(2)]
         trainer.train_episode(batch)
 
         # apply_to_graph_timeseries should have been called (once per batch item)
-        assert graph_call_count[0] == 2, (
-            f"Expected apply_to_graph_timeseries called 2 times, got {graph_call_count[0]}"
-        )
+        assert (
+            graph_call_count[0] == 2
+        ), f"Expected apply_to_graph_timeseries called 2 times, got {graph_call_count[0]}"
 
 
 # ============================================================================
@@ -798,6 +800,6 @@ class TestScenarioDiversityExtended:
                 forecast_horizon=48,
             )
             types_seen.add(scenario.scenario_type)
-        assert len(types_seen) >= 3, (
-            f"Only saw {types_seen} in 50 proposals, expected >= 3 types"
-        )
+        assert (
+            len(types_seen) >= 3
+        ), f"Only saw {types_seen} in 50 proposals, expected >= 3 types"

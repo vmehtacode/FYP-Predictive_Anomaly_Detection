@@ -196,7 +196,7 @@ def main() -> int:
     logger.info("=" * 60)
 
     # Log configuration
-    logger.info(f"Training Configuration:")
+    logger.info("Training Configuration:")
     logger.info(f"  Epochs: {args.epochs}")
     logger.info(f"  Batch size: {args.batch_size}")
     logger.info(f"  Learning rate: {args.lr}")
@@ -205,7 +205,7 @@ def main() -> int:
     logger.info(f"  GAT layers: {args.layers}")
     logger.info(f"  Attention heads: {args.heads}")
     logger.info(f"  Dropout: {args.dropout}")
-    logger.info(f"Dataset Configuration:")
+    logger.info("Dataset Configuration:")
     logger.info(f"  Training samples: {args.train_samples}")
     logger.info(f"  Validation samples: {args.val_samples}")
     logger.info(f"  Nodes per graph: {args.num_nodes}")
@@ -220,7 +220,7 @@ def main() -> int:
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Create datasets
-    logger.info(f"Creating synthetic datasets...")
+    logger.info("Creating synthetic datasets...")
     train_dataset = SyntheticAnomalyDataset(
         num_samples=args.train_samples,
         num_nodes=args.num_nodes,
@@ -238,7 +238,9 @@ def main() -> int:
 
     logger.info(f"  Training dataset: {len(train_dataset)} samples")
     logger.info(f"  Validation dataset: {len(val_dataset)} samples")
-    logger.info(f"  Training anomaly distribution: {train_dataset.get_anomaly_statistics()}")
+    logger.info(
+        f"  Training anomaly distribution: {train_dataset.get_anomaly_statistics()}"
+    )
 
     # Create model
     model = GATVerifier(
@@ -296,8 +298,12 @@ def main() -> int:
         best_acc = history.get("best_val_accuracy", max(history["val_accuracy"]))
         best_epoch = history.get("best_epoch", 0)
 
-        logger.info(f"Final validation accuracy: {final_acc:.4f} ({final_acc * 100:.2f}%)")
-        logger.info(f"Best validation accuracy: {best_acc:.4f} ({best_acc * 100:.2f}%) at epoch {best_epoch}")
+        logger.info(
+            f"Final validation accuracy: {final_acc:.4f} ({final_acc * 100:.2f}%)"
+        )
+        logger.info(
+            f"Best validation accuracy: {best_acc:.4f} ({best_acc * 100:.2f}%) at epoch {best_epoch}"
+        )
         logger.info(f"Final training loss: {history['train_loss'][-1]:.4f}")
         logger.info(f"Final validation loss: {history['val_loss'][-1]:.4f}")
 
@@ -310,7 +316,9 @@ def main() -> int:
             return 0
         else:
             logger.warning(f"BELOW TARGET: Best accuracy {best_acc:.2%} < 85% target")
-            logger.info("Consider: more epochs, more samples, or different hyperparameters")
+            logger.info(
+                "Consider: more epochs, more samples, or different hyperparameters"
+            )
             return 0  # Still success (script ran), evaluation will check accuracy
 
     logger.info("=" * 60)

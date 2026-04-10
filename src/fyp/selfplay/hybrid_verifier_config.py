@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 # Voltage constraints (BS EN 50160 / UK G59/3)
 # ---------------------------------------------------------------------------
 
+
 class VoltageConstraintConfig(BaseModel):
     """BS EN 50160 voltage constraint configuration.
 
@@ -36,9 +37,7 @@ class VoltageConstraintConfig(BaseModel):
     - Safe zone narrower than absolute limits for graduated warning
     """
 
-    nominal_v: float = Field(
-        default=230.0, description="Nominal voltage (V)"
-    )
+    nominal_v: float = Field(default=230.0, description="Nominal voltage (V)")
     lower_limit_pct: float = Field(
         default=-10.0, description="Lower absolute limit as % of nominal"
     )
@@ -56,6 +55,7 @@ class VoltageConstraintConfig(BaseModel):
 # ---------------------------------------------------------------------------
 # Capacity constraints (BS 7671:2018 + SSEN feeder metadata)
 # ---------------------------------------------------------------------------
+
 
 class CapacityConstraintConfig(BaseModel):
     """Feeder/transformer capacity constraint configuration.
@@ -75,11 +75,15 @@ class CapacityConstraintConfig(BaseModel):
         default=100.0, ge=0, description="Absolute max load from fuse rating (kW)"
     )
     overload_threshold_pct: float = Field(
-        default=80.0, ge=0, le=100,
+        default=80.0,
+        ge=0,
+        le=100,
         description="Warning threshold as % of capacity range",
     )
     critical_threshold_pct: float = Field(
-        default=95.0, ge=0, le=100,
+        default=95.0,
+        ge=0,
+        le=100,
         description="Critical threshold as % of capacity range",
     )
 
@@ -87,6 +91,7 @@ class CapacityConstraintConfig(BaseModel):
 # ---------------------------------------------------------------------------
 # Ramp rate constraints
 # ---------------------------------------------------------------------------
+
 
 class RampRateConstraintConfig(BaseModel):
     """Ramp rate constraint configuration.
@@ -97,11 +102,13 @@ class RampRateConstraintConfig(BaseModel):
     """
 
     max_ramp_kw_per_interval: float = Field(
-        default=5.0, ge=0,
+        default=5.0,
+        ge=0,
         description="Maximum allowable change per 30-min interval (kW)",
     )
     warning_ramp_kw_per_interval: float = Field(
-        default=3.5, ge=0,
+        default=3.5,
+        ge=0,
         description="Warning threshold for ramp rate (kW)",
     )
 
@@ -109,6 +116,7 @@ class RampRateConstraintConfig(BaseModel):
 # ---------------------------------------------------------------------------
 # Composite physics config
 # ---------------------------------------------------------------------------
+
 
 class PhysicsConfig(BaseModel):
     """Combined physics constraints configuration grouping voltage,
@@ -129,6 +137,7 @@ class PhysicsConfig(BaseModel):
 # Cascade logic config
 # ---------------------------------------------------------------------------
 
+
 class CascadeConfig(BaseModel):
     """Cascade logic layer configuration.
 
@@ -138,11 +147,15 @@ class CascadeConfig(BaseModel):
     """
 
     propagation_threshold: float = Field(
-        default=0.3, ge=0, le=1,
+        default=0.3,
+        ge=0,
+        le=1,
         description="Min anomaly signal to trigger cascade check",
     )
     decay_factor: float = Field(
-        default=0.7, ge=0, le=1,
+        default=0.7,
+        ge=0,
+        le=1,
         description="Signal decay per hop in the grid topology",
     )
 
@@ -151,6 +164,7 @@ class CascadeConfig(BaseModel):
 # Ensemble weights config
 # ---------------------------------------------------------------------------
 
+
 class EnsembleWeightsConfig(BaseModel):
     """Ensemble layer weights for combining physics, GNN, and cascade scores.
 
@@ -158,20 +172,15 @@ class EnsembleWeightsConfig(BaseModel):
     is not strictly enforced to allow experimentation.
     """
 
-    physics: float = Field(
-        default=0.4, ge=0, le=1, description="Physics layer weight"
-    )
-    gnn: float = Field(
-        default=0.4, ge=0, le=1, description="GNN layer weight"
-    )
-    cascade: float = Field(
-        default=0.2, ge=0, le=1, description="Cascade layer weight"
-    )
+    physics: float = Field(default=0.4, ge=0, le=1, description="Physics layer weight")
+    gnn: float = Field(default=0.4, ge=0, le=1, description="GNN layer weight")
+    cascade: float = Field(default=0.2, ge=0, le=1, description="Cascade layer weight")
 
 
 # ---------------------------------------------------------------------------
 # Top-level hybrid verifier config
 # ---------------------------------------------------------------------------
+
 
 class HybridVerifierConfig(BaseModel):
     """Full hybrid verifier configuration.
@@ -186,11 +195,14 @@ class HybridVerifierConfig(BaseModel):
         default_factory=EnsembleWeightsConfig,
     )
     early_exit_threshold: float = Field(
-        default=0.9, ge=0, le=1,
+        default=0.9,
+        ge=0,
+        le=1,
         description="Physics severity threshold for early exit (skip GNN)",
     )
     false_negative_penalty_ratio: float = Field(
-        default=2.0, ge=1,
+        default=2.0,
+        ge=1,
         description="FN penalty multiplier relative to FP penalty",
     )
     gnn_checkpoint_path: str = Field(
@@ -202,6 +214,7 @@ class HybridVerifierConfig(BaseModel):
 # ---------------------------------------------------------------------------
 # YAML loader
 # ---------------------------------------------------------------------------
+
 
 def load_hybrid_verifier_config(
     config_path: str | Path,
@@ -218,18 +231,14 @@ def load_hybrid_verifier_config(
     """
     path = Path(config_path)
     if not path.exists():
-        logger.warning(
-            "Config file %s not found, using defaults", config_path
-        )
+        logger.warning("Config file %s not found, using defaults", config_path)
         return HybridVerifierConfig()
 
     with open(path) as f:
         data = yaml.safe_load(f)
 
     if data is None:
-        logger.warning(
-            "Config file %s is empty, using defaults", config_path
-        )
+        logger.warning("Config file %s is empty, using defaults", config_path)
         return HybridVerifierConfig()
 
     return HybridVerifierConfig.model_validate(data)

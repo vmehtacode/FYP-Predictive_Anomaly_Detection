@@ -33,8 +33,22 @@ from fyp.evaluation.benchmark import VerifierBenchmark
 def _print_component_table(results: dict) -> None:
     """Print component contribution comparison table."""
     print("\n=== Component Contribution (Ranking-Based Metrics) ===")
-    print(f"{'Config':<20s} | {'ROC-AUC':>7s} | {'PR-AUC':>6s} | {'Opt-F1':>6s} | {'Opt-Thr':>7s} | {'Lift':>8s}")
-    print("-" * 20 + "-+-" + "-" * 7 + "-+-" + "-" * 6 + "-+-" + "-" * 6 + "-+-" + "-" * 7 + "-+-" + "-" * 8)
+    print(
+        f"{'Config':<20s} | {'ROC-AUC':>7s} | {'PR-AUC':>6s} | {'Opt-F1':>6s} | {'Opt-Thr':>7s} | {'Lift':>8s}"
+    )
+    print(
+        "-" * 20
+        + "-+-"
+        + "-" * 7
+        + "-+-"
+        + "-" * 6
+        + "-+-"
+        + "-" * 6
+        + "-+-"
+        + "-" * 7
+        + "-+-"
+        + "-" * 8
+    )
 
     # Sort by ROC-AUC descending, but put baseline first
     configs = sorted(
@@ -59,7 +73,9 @@ def _print_component_table(results: dict) -> None:
         else:
             lift_str = f"{lift:+.1f}%"
 
-        print(f"{name:<20s} | {roc_str:>7s} | {pr_str:>6s} | {opt_f1_str:>6s} | {opt_thr_str:>7s} | {lift_str:>8s}")
+        print(
+            f"{name:<20s} | {roc_str:>7s} | {pr_str:>6s} | {opt_f1_str:>6s} | {opt_thr_str:>7s} | {lift_str:>8s}"
+        )
 
 
 def _print_optimal_weights(weight_sweep: dict) -> None:
@@ -70,14 +86,20 @@ def _print_optimal_weights(weight_sweep: dict) -> None:
         print("  No optimal found (empty grid)")
         return
 
-    roc = optimal.get('roc_auc')
-    opt_f1 = optimal.get('optimal_f1')
-    print(f"\n=== Optimal Weights ({weight_sweep['num_combinations']} combinations tested, ranked by ROC-AUC) ===")
-    print(f"  physics={optimal['physics_weight']:.1f}, "
-          f"gnn={optimal['gnn_weight']:.1f}, "
-          f"cascade={optimal['cascade_weight']:.2f} "
-          f"-> ROC-AUC={roc:.4f}" if roc else "N/A",
-          f"Opt-F1={opt_f1:.4f}" if opt_f1 else "")
+    roc = optimal.get("roc_auc")
+    opt_f1 = optimal.get("optimal_f1")
+    print(
+        f"\n=== Optimal Weights ({weight_sweep['num_combinations']} combinations tested, ranked by ROC-AUC) ==="
+    )
+    print(
+        f"  physics={optimal['physics_weight']:.1f}, "
+        f"gnn={optimal['gnn_weight']:.1f}, "
+        f"cascade={optimal['cascade_weight']:.2f} "
+        f"-> ROC-AUC={roc:.4f}"
+        if roc
+        else "N/A",
+        f"Opt-F1={opt_f1:.4f}" if opt_f1 else "",
+    )
 
 
 def _print_early_exit_table(early_exit: dict) -> None:
@@ -87,8 +109,12 @@ def _print_early_exit_table(early_exit: dict) -> None:
         return
 
     print("\n=== Early-Exit Trade-off ===")
-    print(f"{'Threshold':>9s} | {'ROC-AUC':>7s} | {'Opt-F1':>6s} | {'Latency(ms)':>11s} | {'Exit Rate':>9s}")
-    print("-" * 9 + "-+-" + "-" * 7 + "-+-" + "-" * 6 + "-+-" + "-" * 11 + "-+-" + "-" * 9)
+    print(
+        f"{'Threshold':>9s} | {'ROC-AUC':>7s} | {'Opt-F1':>6s} | {'Latency(ms)':>11s} | {'Exit Rate':>9s}"
+    )
+    print(
+        "-" * 9 + "-+-" + "-" * 7 + "-+-" + "-" * 6 + "-+-" + "-" * 11 + "-+-" + "-" * 9
+    )
 
     for point in sweep:
         threshold = point["threshold"]
@@ -99,7 +125,9 @@ def _print_early_exit_table(early_exit: dict) -> None:
         roc_str = f"{roc_auc:.4f}" if roc_auc is not None else "N/A"
         opt_str = f"{opt_f1:.4f}" if opt_f1 is not None else "N/A"
         exit_str = f"{exit_rate * 100:.1f}%" if exit_rate is not None else "N/A"
-        print(f"{threshold:9.2f} | {roc_str:>7s} | {opt_str:>6s} | {latency:11.1f} | {exit_str:>9s}")
+        print(
+            f"{threshold:9.2f} | {roc_str:>7s} | {opt_str:>6s} | {latency:11.1f} | {exit_str:>9s}"
+        )
 
 
 def _print_anomaly_type_table(per_type: dict) -> None:
@@ -108,8 +136,20 @@ def _print_anomaly_type_table(per_type: dict) -> None:
         return
 
     print("\n=== Per-Anomaly-Type Breakdown ===")
-    print(f"{'Type':<18s} | {'Count':>5s} | {'Hybrid F1':>9s} | {'Baseline F1':>11s} | {'Winner':>8s}")
-    print("-" * 18 + "-+-" + "-" * 5 + "-+-" + "-" * 9 + "-+-" + "-" * 11 + "-+-" + "-" * 8)
+    print(
+        f"{'Type':<18s} | {'Count':>5s} | {'Hybrid F1':>9s} | {'Baseline F1':>11s} | {'Winner':>8s}"
+    )
+    print(
+        "-" * 18
+        + "-+-"
+        + "-" * 5
+        + "-+-"
+        + "-" * 9
+        + "-+-"
+        + "-" * 11
+        + "-+-"
+        + "-" * 8
+    )
 
     for atype, data in sorted(per_type.items()):
         count = data.get("count", 0)
@@ -149,8 +189,10 @@ def _print_significance(significance: dict) -> None:
         elif method == "bootstrap_ci":
             ci_low = data.get("ci_lower", 0)
             ci_high = data.get("ci_upper", 0)
-            print(f"  {data.get('test_name', test_name)}: "
-                  f"CI=[{ci_low:.4f}, {ci_high:.4f}] ({sig_str})")
+            print(
+                f"  {data.get('test_name', test_name)}: "
+                f"CI=[{ci_low:.4f}, {ci_high:.4f}] ({sig_str})"
+            )
         else:
             note = data.get("note", "")
             print(f"  {data.get('test_name', test_name)}: {sig_str} ({note})")
@@ -176,14 +218,16 @@ def _print_summary(results: dict) -> None:
 
     if hybrid_better:
         hybrid_better.sort(key=lambda x: -x[1])
-        print("  Hybrid excels at:", ", ".join(
-            f"{t} (+{d:.2f} F1)" for t, d in hybrid_better
-        ))
+        print(
+            "  Hybrid excels at:",
+            ", ".join(f"{t} (+{d:.2f} F1)" for t, d in hybrid_better),
+        )
     if baseline_better:
         baseline_better.sort(key=lambda x: -x[1])
-        print("  Baseline excels at:", ", ".join(
-            f"{t} (+{d:.2f} F1)" for t, d in baseline_better
-        ))
+        print(
+            "  Baseline excels at:",
+            ", ".join(f"{t} (+{d:.2f} F1)" for t, d in baseline_better),
+        )
     if not hybrid_better and not baseline_better:
         print("  Both configurations perform identically across all types")
 
@@ -194,24 +238,31 @@ def main() -> None:
         description="Run ablation study for hybrid verifier components",
     )
     parser.add_argument(
-        "--samples", type=int, default=500,
+        "--samples",
+        type=int,
+        default=500,
         help="Number of test samples (default: 500)",
     )
     parser.add_argument(
-        "--seed", type=int, default=42,
+        "--seed",
+        type=int,
+        default=42,
         help="Random seed (default: 42)",
     )
     parser.add_argument(
-        "--output", type=str,
+        "--output",
+        type=str,
         default="data/derived/evaluation/ablation_results.json",
         help="Output JSON path (default: data/derived/evaluation/ablation_results.json)",
     )
     parser.add_argument(
-        "--quick", action="store_true",
+        "--quick",
+        action="store_true",
         help="Quick mode: fewer weight sweep points, fewer threshold points",
     )
     parser.add_argument(
-        "--verbose", action="store_true",
+        "--verbose",
+        action="store_true",
         help="Enable debug logging",
     )
 
@@ -224,7 +275,7 @@ def main() -> None:
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     )
 
-    print(f"Ablation Study Configuration:")
+    print("Ablation Study Configuration:")
     print(f"  Samples: {args.samples}")
     print(f"  Seed: {args.seed}")
     print(f"  Quick mode: {args.quick}")

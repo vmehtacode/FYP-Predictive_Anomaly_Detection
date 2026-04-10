@@ -22,23 +22,28 @@ class TestGridGraphBuilder:
     @pytest.fixture
     def simple_metadata(self) -> pd.DataFrame:
         """Create minimal test metadata."""
-        return pd.DataFrame({
-            'primary_substation_id': ['PS1', 'PS1', 'PS1'],
-            'secondary_substation_id': ['SS1', 'SS1', 'SS2'],
-            'lv_feeder_id': ['LV1', 'LV2', 'LV3'],
-            'total_mpan_count': [50, 30, 20],
-        })
+        return pd.DataFrame(
+            {
+                "primary_substation_id": ["PS1", "PS1", "PS1"],
+                "secondary_substation_id": ["SS1", "SS1", "SS2"],
+                "lv_feeder_id": ["LV1", "LV2", "LV3"],
+                "total_mpan_count": [50, 30, 20],
+            }
+        )
 
     @pytest.fixture
     def complex_metadata(self) -> pd.DataFrame:
         """Create larger test metadata with multiple substations."""
         # 2 primary substations, 4 secondary, 10 LV feeders
-        return pd.DataFrame({
-            'primary_substation_id': ['PS1']*5 + ['PS2']*5,
-            'secondary_substation_id': ['SS1', 'SS1', 'SS2', 'SS2', 'SS2'] + ['SS3', 'SS3', 'SS4', 'SS4', 'SS4'],
-            'lv_feeder_id': [f'LV{i}' for i in range(1, 11)],
-            'total_mpan_count': [50, 30, 40, 20, 60, 35, 45, 25, 55, 15],
-        })
+        return pd.DataFrame(
+            {
+                "primary_substation_id": ["PS1"] * 5 + ["PS2"] * 5,
+                "secondary_substation_id": ["SS1", "SS1", "SS2", "SS2", "SS2"]
+                + ["SS3", "SS3", "SS4", "SS4", "SS4"],
+                "lv_feeder_id": [f"LV{i}" for i in range(1, 11)],
+                "total_mpan_count": [50, 30, 40, 20, 60, 35, 45, 25, 55, 15],
+            }
+        )
 
     def test_basic_graph_construction(self, simple_metadata: pd.DataFrame) -> None:
         """Test basic graph is constructed correctly."""
@@ -137,12 +142,14 @@ class TestGridGraphBuilder:
 
     def test_handles_missing_mpan_count(self) -> None:
         """Test graceful handling of missing mpan count."""
-        df = pd.DataFrame({
-            'primary_substation_id': ['PS1', 'PS1'],
-            'secondary_substation_id': ['SS1', 'SS1'],
-            'lv_feeder_id': ['LV1', 'LV2'],
-            # No total_mpan_count column
-        })
+        df = pd.DataFrame(
+            {
+                "primary_substation_id": ["PS1", "PS1"],
+                "secondary_substation_id": ["SS1", "SS1"],
+                "lv_feeder_id": ["LV1", "LV2"],
+                # No total_mpan_count column
+            }
+        )
 
         builder = GridGraphBuilder()
         data = builder.build_from_metadata(df)
@@ -153,11 +160,13 @@ class TestGridGraphBuilder:
 
     def test_exclude_incomplete_nodes_default(self) -> None:
         """Test that incomplete nodes are excluded by default."""
-        df = pd.DataFrame({
-            'primary_substation_id': ['PS1', 'PS1', None],  # One incomplete
-            'secondary_substation_id': ['SS1', 'SS1', 'SS1'],
-            'lv_feeder_id': ['LV1', 'LV2', 'LV3'],
-        })
+        df = pd.DataFrame(
+            {
+                "primary_substation_id": ["PS1", "PS1", None],  # One incomplete
+                "secondary_substation_id": ["SS1", "SS1", "SS1"],
+                "lv_feeder_id": ["LV1", "LV2", "LV3"],
+            }
+        )
 
         builder = GridGraphBuilder(exclude_incomplete=True)
         data = builder.build_from_metadata(df)
@@ -168,11 +177,13 @@ class TestGridGraphBuilder:
 
     def test_include_incomplete_nodes_optional(self) -> None:
         """Test that incomplete nodes can be included."""
-        df = pd.DataFrame({
-            'primary_substation_id': ['PS1', 'PS1', None],
-            'secondary_substation_id': ['SS1', 'SS1', 'SS1'],
-            'lv_feeder_id': ['LV1', 'LV2', 'LV3'],
-        })
+        df = pd.DataFrame(
+            {
+                "primary_substation_id": ["PS1", "PS1", None],
+                "secondary_substation_id": ["SS1", "SS1", "SS1"],
+                "lv_feeder_id": ["LV1", "LV2", "LV3"],
+            }
+        )
 
         builder = GridGraphBuilder(exclude_incomplete=False)
         data = builder.build_from_metadata(df)
@@ -196,7 +207,7 @@ class TestGridGraphBuilder:
         data = builder.build_from_metadata(simple_metadata)
 
         # Check node_ids attribute exists
-        assert hasattr(data, 'node_ids')
+        assert hasattr(data, "node_ids")
         assert len(data.node_ids) == data.num_nodes
 
         # Check reverse lookup
@@ -213,20 +224,22 @@ class TestGridGraphBuilder:
         node_ids = data_temp.node_ids
 
         # Provide custom features (8 dims instead of default 4)
-        custom_features = {
-            node_id: torch.randn(8) for node_id in node_ids
-        }
+        custom_features = {node_id: torch.randn(8) for node_id in node_ids}
 
-        data = builder.build_from_metadata(simple_metadata, node_features=custom_features)
+        data = builder.build_from_metadata(
+            simple_metadata, node_features=custom_features
+        )
         assert data.x.size(1) == 8
 
     def test_empty_dataframe(self) -> None:
         """Test handling of empty dataframe."""
-        df = pd.DataFrame({
-            'primary_substation_id': [],
-            'secondary_substation_id': [],
-            'lv_feeder_id': [],
-        })
+        df = pd.DataFrame(
+            {
+                "primary_substation_id": [],
+                "secondary_substation_id": [],
+                "lv_feeder_id": [],
+            }
+        )
 
         builder = GridGraphBuilder()
         data = builder.build_from_metadata(df)
@@ -236,10 +249,12 @@ class TestGridGraphBuilder:
 
     def test_missing_required_columns_raises(self) -> None:
         """Test that missing required columns raises ValueError."""
-        df = pd.DataFrame({
-            'primary_substation_id': ['PS1'],
-            # Missing secondary_substation_id and lv_feeder_id
-        })
+        df = pd.DataFrame(
+            {
+                "primary_substation_id": ["PS1"],
+                # Missing secondary_substation_id and lv_feeder_id
+            }
+        )
 
         builder = GridGraphBuilder()
         with pytest.raises(ValueError, match="Missing required columns"):
@@ -261,7 +276,9 @@ class TestGridGraphBuilder:
         # Edges should match
         assert torch.equal(data1.edge_index, data2.edge_index)
 
-    def test_node_type_order_matches_ordering(self, simple_metadata: pd.DataFrame) -> None:
+    def test_node_type_order_matches_ordering(
+        self, simple_metadata: pd.DataFrame
+    ) -> None:
         """Test that node types follow primary->secondary->lv ordering."""
         builder = GridGraphBuilder()
         data = builder.build_from_metadata(simple_metadata)
@@ -278,7 +295,9 @@ class TestGridGraphBuilder:
             assert t >= prev_type or prev_type == t
             prev_type = t
 
-    def test_edge_connects_correct_hierarchy(self, simple_metadata: pd.DataFrame) -> None:
+    def test_edge_connects_correct_hierarchy(
+        self, simple_metadata: pd.DataFrame
+    ) -> None:
         """Test edges only connect adjacent hierarchy levels."""
         builder = GridGraphBuilder()
         data = builder.build_from_metadata(simple_metadata)
@@ -291,7 +310,9 @@ class TestGridGraphBuilder:
 
             # Edges should only be between adjacent types (0-1 or 1-2)
             type_diff = abs(src_type - dst_type)
-            assert type_diff == 1, f"Edge ({src}, {dst}) connects non-adjacent types: {src_type} -> {dst_type}"
+            assert (
+                type_diff == 1
+            ), f"Edge ({src}, {dst}) connects non-adjacent types: {src_type} -> {dst_type}"
 
     def test_large_scale_graph(self) -> None:
         """Test with larger scale data for performance sanity check."""
@@ -300,13 +321,15 @@ class TestGridGraphBuilder:
         lv_count = 0
         for ps in range(10):
             for ss in range(5):
-                for lv in range(10):
-                    rows.append({
-                        'primary_substation_id': f'PS{ps}',
-                        'secondary_substation_id': f'SS{ps}_{ss}',
-                        'lv_feeder_id': f'LV{lv_count}',
-                        'total_mpan_count': 50 + lv_count,
-                    })
+                for _lv in range(10):
+                    rows.append(
+                        {
+                            "primary_substation_id": f"PS{ps}",
+                            "secondary_substation_id": f"SS{ps}_{ss}",
+                            "lv_feeder_id": f"LV{lv_count}",
+                            "total_mpan_count": 50 + lv_count,
+                        }
+                    )
                     lv_count += 1
 
         df = pd.DataFrame(rows)

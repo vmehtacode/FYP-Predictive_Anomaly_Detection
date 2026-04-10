@@ -89,7 +89,9 @@ class GATVerifier(nn.Module):
 
         # Input projection: [temporal_embed + type_embed] -> hidden_channels
         # If no type provided, just uses temporal embed
-        self.input_proj = nn.Linear(hidden_channels + self.type_embed_dim, hidden_channels)
+        self.input_proj = nn.Linear(
+            hidden_channels + self.type_embed_dim, hidden_channels
+        )
         self.input_proj_no_type = nn.Linear(hidden_channels, hidden_channels)
 
         # GAT layers with GATv2Conv
@@ -179,7 +181,7 @@ class GATVerifier(nn.Module):
         h0 = h
 
         # Step 3: GATv2Conv layers with oversmoothing prevention
-        for conv, norm in zip(self.convs, self.norms):
+        for conv, norm in zip(self.convs, self.norms, strict=False):
             # GAT layer (has internal residual via residual=True)
             h_new = conv(h, edge_index)
 

@@ -216,8 +216,7 @@ class GridGraphBuilder:
         if missing:
             available = list(df.columns)
             raise ValueError(
-                f"Missing required columns: {missing}. "
-                f"Available columns: {available}"
+                f"Missing required columns: {missing}. Available columns: {available}"
             )
 
     def _clean_data(self, df: pd.DataFrame) -> pd.DataFrame:

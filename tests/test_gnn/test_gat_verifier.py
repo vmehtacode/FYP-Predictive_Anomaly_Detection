@@ -180,7 +180,9 @@ class TestGATVerifier:
 
         assert scores.shape == (100, 1)
 
-    def test_with_and_without_node_type_differ(self, model: GATVerifier, sample_data: tuple) -> None:
+    def test_with_and_without_node_type_differ(
+        self, model: GATVerifier, sample_data: tuple
+    ) -> None:
         """Test that node type embedding actually affects output."""
         x, edge_index, node_type = sample_data
         model.eval()
@@ -196,30 +198,21 @@ class TestGATVerifier:
         """Verify model uses GATv2Conv not GATConv."""
         from torch_geometric.nn import GATv2Conv
 
-        has_gatv2 = any(
-            isinstance(module, GATv2Conv)
-            for module in model.modules()
-        )
+        has_gatv2 = any(isinstance(module, GATv2Conv) for module in model.modules())
         assert has_gatv2, "Model should use GATv2Conv"
 
     def test_does_not_use_gatconv(self, model: GATVerifier) -> None:
         """Verify model does NOT use old GATConv."""
         from torch_geometric.nn import GATConv
 
-        has_gat = any(
-            isinstance(module, GATConv)
-            for module in model.modules()
-        )
+        has_gat = any(isinstance(module, GATConv) for module in model.modules())
         assert not has_gat, "Model should NOT use old GATConv"
 
     def test_has_three_layers(self, model: GATVerifier) -> None:
         """Verify model has 3 GAT layers as specified."""
         from torch_geometric.nn import GATv2Conv
 
-        gatv2_layers = [
-            m for m in model.modules()
-            if isinstance(m, GATv2Conv)
-        ]
+        gatv2_layers = [m for m in model.modules() if isinstance(m, GATv2Conv)]
         assert len(gatv2_layers) == 3
 
     def test_configurable_layers(self) -> None:
@@ -275,13 +268,10 @@ class TestGATVerifier:
         # Chain: 0-1-2-...-29
         src = torch.arange(num_nodes - 1)
         dst = torch.arange(1, num_nodes)
-        edge_index = torch.stack([
-            torch.cat([src, dst]),
-            torch.cat([dst, src])
-        ])
+        edge_index = torch.stack([torch.cat([src, dst]), torch.cat([dst, src])])
 
         # Different types at different positions
-        node_type = torch.tensor([0]*10 + [1]*10 + [2]*10)
+        node_type = torch.tensor([0] * 10 + [1] * 10 + [2] * 10)
 
         model.eval()
         with torch.inference_mode():
@@ -289,7 +279,9 @@ class TestGATVerifier:
 
         # If oversmoothing occurred, all scores would be nearly identical
         score_std = scores.std().item()
-        assert score_std > 0.01, f"Score std {score_std:.4f} too low - possible oversmoothing"
+        assert (
+            score_std > 0.01
+        ), f"Score std {score_std:.4f} too low - possible oversmoothing"
 
     def test_oversmoothing_varies_with_depth(self) -> None:
         """Test that deeper models show GCNII residual effect."""
@@ -338,7 +330,9 @@ class TestGATVerifier:
 
         print(f"\nInference latency: avg={avg_ms:.2f}ms, p95={p95_ms:.2f}ms")
         # 35ms threshold allows for environment variance; target is <30ms
-        assert avg_ms < 35, f"Latency {avg_ms:.2f}ms exceeds 35ms threshold (target: 30ms)"
+        assert (
+            avg_ms < 35
+        ), f"Latency {avg_ms:.2f}ms exceeds 35ms threshold (target: 30ms)"
 
     def test_empty_graph(self, model: GATVerifier) -> None:
         """Test handling of empty graph (0 nodes)."""
@@ -368,8 +362,10 @@ class TestGATVerifier:
         """Test handling of disconnected nodes."""
         x = torch.randn(10, 5)
         # Only connect first 5 nodes
-        edge_index = torch.tensor([[0, 1, 2, 3, 4, 1, 2, 3, 4, 0],
-                                   [1, 2, 3, 4, 0, 0, 1, 2, 3, 4]], dtype=torch.long)
+        edge_index = torch.tensor(
+            [[0, 1, 2, 3, 4, 1, 2, 3, 4, 0], [1, 2, 3, 4, 0, 0, 1, 2, 3, 4]],
+            dtype=torch.long,
+        )
         # Nodes 5-9 are disconnected
 
         model.eval()
@@ -385,14 +381,21 @@ class TestSyntheticAnomalyDetection:
     """Test anomaly detection on synthetic data."""
 
     @pytest.fixture
-    def grid_graph(self) -> "torch_geometric.data.Data":
+    def grid_graph(self):
         """Create a realistic grid graph."""
-        df = pd.DataFrame({
-            'primary_substation_id': ['PS1']*10 + ['PS2']*10,
-            'secondary_substation_id': ['SS1']*3 + ['SS2']*3 + ['SS3']*4 + ['SS4']*3 + ['SS5']*3 + ['SS6']*4,
-            'lv_feeder_id': [f'LV{i}' for i in range(20)],
-            'total_mpan_count': [50 + i*5 for i in range(20)],
-        })
+        df = pd.DataFrame(
+            {
+                "primary_substation_id": ["PS1"] * 10 + ["PS2"] * 10,
+                "secondary_substation_id": ["SS1"] * 3
+                + ["SS2"] * 3
+                + ["SS3"] * 4
+                + ["SS4"] * 3
+                + ["SS5"] * 3
+                + ["SS6"] * 4,
+                "lv_feeder_id": [f"LV{i}" for i in range(20)],
+                "total_mpan_count": [50 + i * 5 for i in range(20)],
+            }
+        )
         builder = GridGraphBuilder()
         return builder.build_from_metadata(df)
 
@@ -411,7 +414,9 @@ class TestSyntheticAnomalyDetection:
         assert scores.max() <= 1
 
         print(f"\nPipeline test: {grid_graph.num_nodes} nodes -> {scores.shape} scores")
-        print(f"Score distribution: min={scores.min():.3f}, max={scores.max():.3f}, mean={scores.mean():.3f}")
+        print(
+            f"Score distribution: min={scores.min():.3f}, max={scores.max():.3f}, mean={scores.mean():.3f}"
+        )
 
     def test_synthetic_anomaly_detection_structure(self, grid_graph) -> None:
         """Test synthetic anomaly detection pipeline structure.
@@ -437,7 +442,9 @@ class TestSyntheticAnomalyDetection:
         anomaly_mask[anomaly_indices] = True
 
         x_anomaly = x_normal.clone()
-        x_anomaly[anomaly_mask] = torch.randn(anomaly_mask.sum(), grid_graph.x.size(1)) * 3.0 + 2.0
+        x_anomaly[anomaly_mask] = (
+            torch.randn(anomaly_mask.sum(), grid_graph.x.size(1)) * 3.0 + 2.0
+        )
 
         with torch.inference_mode():
             scores = model(x_anomaly, grid_graph.edge_index, grid_graph.node_type)
@@ -474,7 +481,9 @@ class TestSyntheticAnomalyDetection:
 
         with torch.inference_mode():
             scores_base = model(x_base, grid_graph.edge_index, grid_graph.node_type)
-            scores_modified = model(x_modified, grid_graph.edge_index, grid_graph.node_type)
+            scores_modified = model(
+                x_modified, grid_graph.edge_index, grid_graph.node_type
+            )
 
         # At least the modified node should have different score
         assert scores_base[0].item() != scores_modified[0].item()
@@ -489,7 +498,7 @@ class TestSyntheticAnomalyDetection:
 
         # Different edge structures
         edge_index_original = grid_graph.edge_index
-        edge_index_shuffled = edge_index_original[:, torch.randperm(edge_index_original.size(1))]
+        edge_index_original[:, torch.randperm(edge_index_original.size(1))]
 
         with torch.inference_mode():
             scores_original = model(x, edge_index_original, grid_graph.node_type)
@@ -512,6 +521,7 @@ class TestSyntheticAnomalyDetection:
             edge_index = torch.randint(0, num_nodes, (2, num_nodes * 2))
             node_type = torch.randint(0, 3, (num_nodes,))
             from torch_geometric.data import Data
+
             graphs.append(Data(x=x, edge_index=edge_index, node_type=node_type))
 
         batch = Batch.from_data_list(graphs)

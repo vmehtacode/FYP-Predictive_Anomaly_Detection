@@ -58,24 +58,26 @@ _COLORS = {
     "physics_cascade": "#bcbd22",
     "gnn_cascade": "#17becf",
     "isolation_forest": "#ff7f0e",  # Orange
-    "autoencoder": "#aec7e8",      # Light blue
+    "autoencoder": "#aec7e8",  # Light blue
 }
 
 
 def _setup_style() -> None:
     """Configure matplotlib for publication-quality output."""
     plt.style.use(_STYLE)
-    plt.rcParams.update({
-        "font.size": 12,
-        "axes.labelsize": 14,
-        "axes.titlesize": 16,
-        "xtick.labelsize": 11,
-        "ytick.labelsize": 11,
-        "legend.fontsize": 10,
-        "figure.dpi": 150,
-        "savefig.dpi": 300,
-        "savefig.pad_inches": 0.1,
-    })
+    plt.rcParams.update(
+        {
+            "font.size": 12,
+            "axes.labelsize": 14,
+            "axes.titlesize": 16,
+            "xtick.labelsize": 11,
+            "ytick.labelsize": 11,
+            "legend.fontsize": 10,
+            "figure.dpi": 150,
+            "savefig.dpi": 300,
+            "savefig.pad_inches": 0.1,
+        }
+    )
 
 
 def _color_for(name: str) -> str:
@@ -107,7 +109,9 @@ def plot_configuration_comparison(
     """
     configs = benchmark.get("configurations", {})
     if not configs:
-        logger.warning("No configurations found in benchmark results; skipping comparison chart.")
+        logger.warning(
+            "No configurations found in benchmark results; skipping comparison chart."
+        )
         return None
 
     metrics_keys = ["accuracy", "precision", "recall", "f1"]
@@ -125,20 +129,24 @@ def plot_configuration_comparison(
         vals = [configs[name].get(m, 0.0) for m in metrics_keys]
         offset = (i - len(config_names) / 2 + 0.5) * width
         bars = ax.bar(
-            x + offset, vals, width,
+            x + offset,
+            vals,
+            width,
             label=name.replace("_", " ").title(),
             color=_color_for(name),
             edgecolor="white",
             linewidth=0.5,
         )
         # Value labels on bars
-        for bar, val in zip(bars, vals):
+        for bar, val in zip(bars, vals, strict=False):
             ax.text(
                 bar.get_x() + bar.get_width() / 2,
                 bar.get_height() + 0.01,
                 f"{val:.3f}",
-                ha="center", va="bottom",
-                fontsize=7, rotation=45,
+                ha="center",
+                va="bottom",
+                fontsize=7,
+                rotation=45,
             )
 
     ax.set_xticks(x)
@@ -194,8 +202,12 @@ def plot_early_exit_tradeoff(
     ax1.set_xlabel("Early-Exit Threshold")
     ax1.set_ylabel("F1 Score", color=color_f1)
     line1 = ax1.plot(
-        thresholds, f1_scores, "o-",
-        color=color_f1, linewidth=2, markersize=8,
+        thresholds,
+        f1_scores,
+        "o-",
+        color=color_f1,
+        linewidth=2,
+        markersize=8,
         label="F1 Score",
     )
     ax1.tick_params(axis="y", labelcolor=color_f1)
@@ -204,15 +216,22 @@ def plot_early_exit_tradeoff(
     # Mark optimal F1 point
     best_idx = int(np.argmax(f1_scores))
     ax1.plot(
-        thresholds[best_idx], f1_scores[best_idx],
-        marker="*", color="gold", markersize=20,
-        zorder=5, markeredgecolor="black", markeredgewidth=1.0,
+        thresholds[best_idx],
+        f1_scores[best_idx],
+        marker="*",
+        color="gold",
+        markersize=20,
+        zorder=5,
+        markeredgecolor="black",
+        markeredgewidth=1.0,
     )
     ax1.annotate(
         f"Best F1: {f1_scores[best_idx]:.3f}",
         xy=(thresholds[best_idx], f1_scores[best_idx]),
-        xytext=(15, 15), textcoords="offset points",
-        fontsize=10, fontweight="bold",
+        xytext=(15, 15),
+        textcoords="offset points",
+        fontsize=10,
+        fontweight="bold",
         arrowprops={"arrowstyle": "->", "color": "black"},
     )
 
@@ -221,8 +240,12 @@ def plot_early_exit_tradeoff(
     color_lat = "#d62728"
     ax2.set_ylabel("Mean Latency (ms)", color=color_lat)
     line2 = ax2.plot(
-        thresholds, latencies, "s--",
-        color=color_lat, linewidth=2, markersize=8,
+        thresholds,
+        latencies,
+        "s--",
+        color=color_lat,
+        linewidth=2,
+        markersize=8,
         label="Mean Latency",
     )
     ax2.tick_params(axis="y", labelcolor=color_lat)
@@ -234,13 +257,16 @@ def plot_early_exit_tradeoff(
             ax1.annotate(
                 f"{pct:.0f}%",
                 xy=(thresholds[i], f1_scores[i]),
-                xytext=(0, -20), textcoords="offset points",
-                fontsize=8, ha="center", color="gray",
+                xytext=(0, -20),
+                textcoords="offset points",
+                fontsize=8,
+                ha="center",
+                color="gray",
             )
 
     # Combined legend
     lines = line1 + line2
-    labels = [l.get_label() for l in lines]
+    labels = [line.get_label() for line in lines]
     ax1.legend(lines, labels, loc="lower left", framealpha=0.9)
 
     ax1.set_title("Early-Exit Threshold: Accuracy vs Latency Trade-off")
@@ -281,8 +307,8 @@ def plot_weight_sweep_heatmap(
         return None
 
     # Extract unique axes values
-    physics_vals = sorted(set(p["physics_weight"] for p in grid))
-    gnn_vals = sorted(set(p["gnn_weight"] for p in grid))
+    physics_vals = sorted({p["physics_weight"] for p in grid})
+    gnn_vals = sorted({p["gnn_weight"] for p in grid})
 
     # Build F1 matrix (physics on Y, gnn on X)
     f1_matrix = np.full((len(physics_vals), len(gnn_vals)), np.nan)
@@ -296,8 +322,11 @@ def plot_weight_sweep_heatmap(
     # Mask NaN cells
     masked = np.ma.masked_invalid(f1_matrix)
     im = ax.imshow(
-        masked, cmap="viridis", aspect="auto",
-        origin="lower", interpolation="nearest",
+        masked,
+        cmap="viridis",
+        aspect="auto",
+        origin="lower",
+        interpolation="nearest",
     )
     cbar = fig.colorbar(im, ax=ax, label="F1 Score")
 
@@ -308,9 +337,13 @@ def plot_weight_sweep_heatmap(
             if not np.isnan(val):
                 text_color = "white" if val < np.nanmedian(f1_matrix) else "black"
                 ax.text(
-                    j, i, f"{val:.3f}",
-                    ha="center", va="center",
-                    fontsize=9, fontweight="bold",
+                    j,
+                    i,
+                    f"{val:.3f}",
+                    ha="center",
+                    va="center",
+                    fontsize=9,
+                    fontweight="bold",
                     color=text_color,
                 )
 
@@ -320,9 +353,13 @@ def plot_weight_sweep_heatmap(
         opt_pi = physics_vals.index(optimal["physics_weight"])
         opt_gi = gnn_vals.index(optimal["gnn_weight"])
         ax.plot(
-            opt_gi, opt_pi, marker="*",
-            color="red", markersize=20,
-            markeredgecolor="white", markeredgewidth=1.5,
+            opt_gi,
+            opt_pi,
+            marker="*",
+            color="red",
+            markersize=20,
+            markeredgecolor="white",
+            markeredgewidth=1.5,
         )
 
     ax.set_xticks(range(len(gnn_vals)))
@@ -368,9 +405,7 @@ def plot_anomaly_type_breakdown(
         return None
 
     # Filter to anomaly types (exclude NORMAL if present)
-    anomaly_types = sorted(
-        t for t in per_type if t != "NORMAL" and t != "NONE"
-    )
+    anomaly_types = sorted(t for t in per_type if t != "NORMAL" and t != "NONE")
     if not anomaly_types:
         anomaly_types = sorted(per_type.keys())
 
@@ -382,25 +417,34 @@ def plot_anomaly_type_breakdown(
     width = 0.35
 
     bars_hybrid = ax.bar(
-        x - width / 2, hybrid_f1s, width,
-        label="Hybrid Full", color=_COLORS["hybrid_full"],
-        edgecolor="white", linewidth=0.5,
+        x - width / 2,
+        hybrid_f1s,
+        width,
+        label="Hybrid Full",
+        color=_COLORS["hybrid_full"],
+        edgecolor="white",
+        linewidth=0.5,
     )
     bars_baseline = ax.bar(
-        x + width / 2, baseline_f1s, width,
-        label="Baseline", color=_COLORS["baseline"],
-        edgecolor="white", linewidth=0.5,
+        x + width / 2,
+        baseline_f1s,
+        width,
+        label="Baseline",
+        color=_COLORS["baseline"],
+        edgecolor="white",
+        linewidth=0.5,
     )
 
     # Add lift annotations
-    for i, (h, b) in enumerate(zip(hybrid_f1s, baseline_f1s)):
+    for i, (h, b) in enumerate(zip(hybrid_f1s, baseline_f1s, strict=False)):
         if b > 0:
             lift = (h - b) / b * 100
             sign = "+" if lift >= 0 else ""
             ax.annotate(
                 f"{sign}{lift:.0f}%",
                 xy=(x[i], max(h, b) + 0.02),
-                ha="center", fontsize=9,
+                ha="center",
+                fontsize=9,
                 color="green" if lift >= 0 else "red",
                 fontweight="bold",
             )
@@ -408,10 +452,13 @@ def plot_anomaly_type_breakdown(
     ax.set_xticks(x)
     ax.set_xticklabels(
         [t.replace("_", " ").title() for t in anomaly_types],
-        rotation=15, ha="right",
+        rotation=15,
+        ha="right",
     )
     ax.set_ylabel("F1 Score")
-    ax.set_ylim(0, max(max(hybrid_f1s, default=0), max(baseline_f1s, default=0)) * 1.2 + 0.05)
+    ax.set_ylim(
+        0, max(max(hybrid_f1s, default=0), max(baseline_f1s, default=0)) * 1.2 + 0.05
+    )
     ax.set_title("Detection Performance by Anomaly Type")
     ax.legend(loc="upper right", framealpha=0.9)
 
@@ -482,23 +529,33 @@ def plot_component_contribution(
 
     fig, ax = plt.subplots(figsize=(10, max(6, len(names) * 0.6)))
     bars = ax.barh(
-        range(len(names)), f1_scores,
-        color=bar_colors, edgecolor="white", linewidth=0.5,
+        range(len(names)),
+        f1_scores,
+        color=bar_colors,
+        edgecolor="white",
+        linewidth=0.5,
     )
 
     # Value labels
-    for bar, val in zip(bars, f1_scores):
+    for bar, val in zip(bars, f1_scores, strict=False):
         ax.text(
-            bar.get_width() + 0.005, bar.get_y() + bar.get_height() / 2,
-            f"{val:.3f}", va="center", fontsize=10,
+            bar.get_width() + 0.005,
+            bar.get_y() + bar.get_height() / 2,
+            f"{val:.3f}",
+            va="center",
+            fontsize=10,
         )
 
     # Baseline reference line
     baseline_f1 = isolation.get("baseline", {}).get("f1")
     if baseline_f1 is not None:
         ax.axvline(
-            baseline_f1, color="#1f77b4", linestyle="--",
-            linewidth=1.5, alpha=0.7, label=f"Baseline F1 ({baseline_f1:.3f})",
+            baseline_f1,
+            color="#1f77b4",
+            linestyle="--",
+            linewidth=1.5,
+            alpha=0.7,
+            label=f"Baseline F1 ({baseline_f1:.3f})",
         )
         ax.legend(loc="lower right", framealpha=0.9)
 
@@ -509,6 +566,7 @@ def plot_component_contribution(
 
     # Custom legend for bar types
     from matplotlib.patches import Patch
+
     legend_patches = [
         Patch(facecolor=type_colors["baseline"], label="Baseline"),
         Patch(facecolor=type_colors["single"], label="Single Component"),
@@ -516,14 +574,19 @@ def plot_component_contribution(
         Patch(facecolor=type_colors["full"], label="Full Ensemble"),
     ]
     ax2_legend = ax.legend(
-        handles=legend_patches, loc="lower right",
-        framealpha=0.9, title="Configuration Type",
+        handles=legend_patches,
+        loc="lower right",
+        framealpha=0.9,
+        title="Configuration Type",
     )
     ax.add_artist(ax2_legend)
     if baseline_f1 is not None:
         ax.axvline(
-            baseline_f1, color="#1f77b4", linestyle="--",
-            linewidth=1.5, alpha=0.7,
+            baseline_f1,
+            color="#1f77b4",
+            linestyle="--",
+            linewidth=1.5,
+            alpha=0.7,
         )
 
     out_path = output_dir / f"fig_component_contribution.{fmt}"
@@ -565,7 +628,15 @@ def generate_latex_table(
         return None
 
     metrics_keys = ["accuracy", "precision", "recall", "f1", "mean_latency_ms"]
-    headers = ["Configuration", "Accuracy", "Precision", "Recall", "F1", "Latency (ms)", "Early-Exit"]
+    headers = [
+        "Configuration",
+        "Accuracy",
+        "Precision",
+        "Recall",
+        "F1",
+        "Latency (ms)",
+        "Early-Exit",
+    ]
 
     # Find best value per metric (higher is better for all except latency)
     best: dict[str, float] = {}
@@ -707,7 +778,9 @@ def main() -> int:
             benchmark = json.load(f)
         logger.info("Loaded benchmark results from %s", bench_path)
     else:
-        logger.warning("Benchmark file not found: %s — skipping benchmark figures.", bench_path)
+        logger.warning(
+            "Benchmark file not found: %s — skipping benchmark figures.", bench_path
+        )
 
     # Load ablation results
     ablation: dict | None = None
@@ -717,7 +790,9 @@ def main() -> int:
             ablation = json.load(f)
         logger.info("Loaded ablation results from %s", ablation_path)
     else:
-        logger.warning("Ablation file not found: %s — skipping ablation figures.", ablation_path)
+        logger.warning(
+            "Ablation file not found: %s — skipping ablation figures.", ablation_path
+        )
 
     if benchmark is None and ablation is None:
         logger.error("No input files found. Generate benchmark/ablation results first.")
@@ -727,7 +802,9 @@ def main() -> int:
 
     # Figure 1: Configuration comparison (needs benchmark)
     if benchmark:
-        path = plot_configuration_comparison(benchmark, output_dir, args.format, args.dpi)
+        path = plot_configuration_comparison(
+            benchmark, output_dir, args.format, args.dpi
+        )
         if path:
             generated.append(str(path))
 

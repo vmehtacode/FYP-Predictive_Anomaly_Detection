@@ -274,10 +274,14 @@ def main() -> int:
     if "epoch" in checkpoint:
         logger.info(f"  Trained for {checkpoint['epoch']} epochs")
     if "metrics" in checkpoint and "best_val_accuracy" in checkpoint["metrics"]:
-        logger.info(f"  Training best val accuracy: {checkpoint['metrics']['best_val_accuracy']:.4f}")
+        logger.info(
+            f"  Training best val accuracy: {checkpoint['metrics']['best_val_accuracy']:.4f}"
+        )
 
     # Create held-out test dataset
-    logger.info(f"Creating test dataset with {args.test_samples} samples (seed={args.seed})")
+    logger.info(
+        f"Creating test dataset with {args.test_samples} samples (seed={args.seed})"
+    )
     test_dataset = SyntheticAnomalyDataset(
         num_samples=args.test_samples,
         num_nodes=args.num_nodes,
@@ -315,7 +319,9 @@ def main() -> int:
     logger.info("=" * 60)
     logger.info("EVALUATION RESULTS")
     logger.info("=" * 60)
-    logger.info(f"Accuracy:  {metrics['accuracy']:.4f} ({metrics['accuracy'] * 100:.2f}%)")
+    logger.info(
+        f"Accuracy:  {metrics['accuracy']:.4f} ({metrics['accuracy'] * 100:.2f}%)"
+    )
     logger.info(f"Precision: {metrics['precision']:.4f}")
     logger.info(f"Recall:    {metrics['recall']:.4f}")
     logger.info(f"F1 Score:  {metrics['f1']:.4f}")
@@ -325,17 +331,25 @@ def main() -> int:
     logger.info(f"  Negative (normal): {metrics['num_negative']}")
     logger.info("")
     logger.info("Confusion Matrix:")
-    logger.info(f"  TN: {metrics['true_negatives']:5d}  FP: {metrics['false_positives']:5d}")
-    logger.info(f"  FN: {metrics['false_negatives']:5d}  TP: {metrics['true_positives']:5d}")
+    logger.info(
+        f"  TN: {metrics['true_negatives']:5d}  FP: {metrics['false_positives']:5d}"
+    )
+    logger.info(
+        f"  FN: {metrics['false_negatives']:5d}  TP: {metrics['true_positives']:5d}"
+    )
     logger.info("=" * 60)
 
     # Check against target
     target = args.target_accuracy
     if metrics["accuracy"] >= target:
-        logger.info(f"SUCCESS: Accuracy {metrics['accuracy']:.2%} >= {target:.0%} target")
+        logger.info(
+            f"SUCCESS: Accuracy {metrics['accuracy']:.2%} >= {target:.0%} target"
+        )
         success = True
     else:
-        logger.warning(f"BELOW TARGET: Accuracy {metrics['accuracy']:.2%} < {target:.0%} target")
+        logger.warning(
+            f"BELOW TARGET: Accuracy {metrics['accuracy']:.2%} < {target:.0%} target"
+        )
         success = False
 
     # Save metrics if output path provided

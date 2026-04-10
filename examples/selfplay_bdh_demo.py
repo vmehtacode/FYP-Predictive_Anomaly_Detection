@@ -12,6 +12,7 @@ References:
     the Transformer and Models of the Brain. arXiv:2509.26507
     https://arxiv.org/abs/2509.26507
 """
+
 import sys
 from pathlib import Path
 
@@ -139,7 +140,7 @@ def main() -> None:
         scenario_counts = Counter(all_scenarios)
         for scenario, count in scenario_counts.most_common():
             logger.info(
-                f"      {scenario:15s}: {count:3d} ({count/len(all_scenarios):.1%})"
+                f"      {scenario:15s}: {count:3d} ({count / len(all_scenarios):.1%})"
             )
 
     # 6. Standard metrics
@@ -294,7 +295,7 @@ def plot_bdh_metrics(metrics_history: list, trainer: any) -> None:
         ax5.text(
             bar.get_x() + bar.get_width() / 2.0,
             height,
-            f"{count}\n({count/total:.1%})",
+            f"{count}\n({count / total:.1%})",
             ha="center",
             va="bottom",
         )

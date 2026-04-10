@@ -69,7 +69,7 @@ class SolverAgent:
             use_frequency_enhanced: Whether to use FrequencyEnhancedPatchTST (default True)
         """
         self.use_frequency_enhanced = use_frequency_enhanced
-        
+
         # Initialize model configuration
         if model_config is None:
             # Use frequency-enhanced config if enabled and available
@@ -100,7 +100,9 @@ class SolverAgent:
 
         # Initialize forecaster - prefer frequency-enhanced if available and enabled
         if use_frequency_enhanced and FrequencyEnhancedForecaster is not None:
-            logger.info("Initializing FrequencyEnhancedForecaster for improved periodicity capture")
+            logger.info(
+                "Initializing FrequencyEnhancedForecaster for improved periodicity capture"
+            )
             self.model = FrequencyEnhancedForecaster(
                 seq_len=model_config.get("seq_len", 96),
                 patch_len=model_config.get("patch_len", 16),
@@ -147,7 +149,6 @@ class SolverAgent:
         # Pretrain on historical data if available
         if pretrain_epochs > 0 and historical_data_path:
             self._pretrain_on_historical_data(historical_data_path, pretrain_epochs)
-
 
     def _pretrain_on_historical_data(
         self, data_path: str, pretrain_epochs: int

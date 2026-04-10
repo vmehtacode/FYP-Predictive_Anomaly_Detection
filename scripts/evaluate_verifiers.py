@@ -101,9 +101,11 @@ def print_summary_table(results: dict) -> None:
     # Test data stats
     stats = results.get("test_data_stats", {})
     if stats:
-        print(f"Test Data: {stats.get('total_samples', 0)} samples "
-              f"({stats.get('anomalous_samples', 0)} anomalous, "
-              f"{stats.get('normal_samples', 0)} normal)")
+        print(
+            f"Test Data: {stats.get('total_samples', 0)} samples "
+            f"({stats.get('anomalous_samples', 0)} anomalous, "
+            f"{stats.get('normal_samples', 0)} normal)"
+        )
         dist = stats.get("anomaly_type_distribution", {})
         if dist:
             print(f"Anomaly types: {dist}")
@@ -194,8 +196,7 @@ def main() -> int:
     # Filter to requested configs if specified
     if args.configs:
         filtered = {
-            k: v for k, v in results["configurations"].items()
-            if k in args.configs
+            k: v for k, v in results["configurations"].items() if k in args.configs
         }
         if not filtered:
             logger.error(

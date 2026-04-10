@@ -131,7 +131,9 @@ class AblationStudy:
             per_sample_correct.append(1 if predicted == has_anomaly else 0)
 
         metrics = self.benchmark.evaluate_configuration(
-            name, config_dict, self.test_data,
+            name,
+            config_dict,
+            self.test_data,
         )
         metrics["per_sample_scores"] = per_sample_scores
         metrics["per_sample_correct"] = per_sample_correct
@@ -177,7 +179,9 @@ class AblationStudy:
             per_sample_correct.append(1 if predicted == has_anomaly else 0)
 
         metrics = self.benchmark.evaluate_configuration(
-            "baseline", config_dict, self.test_data,
+            "baseline",
+            config_dict,
+            self.test_data,
         )
         metrics["per_sample_scores"] = per_sample_scores
         metrics["per_sample_correct"] = per_sample_correct
@@ -203,25 +207,39 @@ class AblationStudy:
 
         configs = {
             "physics_only": EnsembleWeightsConfig(
-                physics=1.0, gnn=0.0, cascade=0.0,
+                physics=1.0,
+                gnn=0.0,
+                cascade=0.0,
             ),
             "gnn_only": EnsembleWeightsConfig(
-                physics=0.0, gnn=1.0, cascade=0.0,
+                physics=0.0,
+                gnn=1.0,
+                cascade=0.0,
             ),
             "cascade_only": EnsembleWeightsConfig(
-                physics=0.0, gnn=0.0, cascade=1.0,
+                physics=0.0,
+                gnn=0.0,
+                cascade=1.0,
             ),
             "physics_gnn": EnsembleWeightsConfig(
-                physics=0.5, gnn=0.5, cascade=0.0,
+                physics=0.5,
+                gnn=0.5,
+                cascade=0.0,
             ),
             "physics_cascade": EnsembleWeightsConfig(
-                physics=0.5, gnn=0.0, cascade=0.5,
+                physics=0.5,
+                gnn=0.0,
+                cascade=0.5,
             ),
             "gnn_cascade": EnsembleWeightsConfig(
-                physics=0.0, gnn=0.5, cascade=0.5,
+                physics=0.0,
+                gnn=0.5,
+                cascade=0.5,
             ),
             "hybrid_full": EnsembleWeightsConfig(
-                physics=0.4, gnn=0.4, cascade=0.2,
+                physics=0.4,
+                gnn=0.4,
+                cascade=0.2,
             ),
         }
 
@@ -237,8 +255,13 @@ class AblationStudy:
 
         # Evaluate each hybrid configuration
         for name, weights in configs.items():
-            logger.info("  Evaluating %s (%.1f, %.1f, %.1f)...",
-                        name, weights.physics, weights.gnn, weights.cascade)
+            logger.info(
+                "  Evaluating %s (%.1f, %.1f, %.1f)...",
+                name,
+                weights.physics,
+                weights.gnn,
+                weights.cascade,
+            )
             cfg = HybridVerifierConfig(ensemble_weights=weights)
             metrics = self._evaluate_config(name, cfg)
 
@@ -267,8 +290,7 @@ class AblationStudy:
         results["baseline"]["lift_vs_baseline_pct"] = 0.0
         results["baseline"]["roc_auc_lift_pct"] = 0.0
 
-        logger.info("Component isolation complete: %d configs evaluated",
-                     len(results))
+        logger.info("Component isolation complete: %d configs evaluated", len(results))
         return results
 
     # ------------------------------------------------------------------
@@ -301,28 +323,36 @@ class AblationStudy:
 
                 name = f"w_{w_physics}_{w_gnn}_{w_cascade}"
                 weights = EnsembleWeightsConfig(
-                    physics=w_physics, gnn=w_gnn, cascade=w_cascade,
+                    physics=w_physics,
+                    gnn=w_gnn,
+                    cascade=w_cascade,
                 )
                 cfg = HybridVerifierConfig(ensemble_weights=weights)
 
-                logger.info("  Sweep: physics=%.1f gnn=%.1f cascade=%.2f",
-                            w_physics, w_gnn, w_cascade)
+                logger.info(
+                    "  Sweep: physics=%.1f gnn=%.1f cascade=%.2f",
+                    w_physics,
+                    w_gnn,
+                    w_cascade,
+                )
                 metrics = self._evaluate_config(name, cfg)
 
-                grid_results.append({
-                    "physics_weight": w_physics,
-                    "gnn_weight": w_gnn,
-                    "cascade_weight": w_cascade,
-                    "f1": metrics["f1"],
-                    "roc_auc": metrics.get("roc_auc"),
-                    "pr_auc": metrics.get("pr_auc"),
-                    "optimal_f1": metrics.get("optimal_f1"),
-                    "optimal_threshold": metrics.get("optimal_threshold"),
-                    "accuracy": metrics["accuracy"],
-                    "precision": metrics["precision"],
-                    "recall": metrics["recall"],
-                    "mean_latency_ms": metrics["mean_latency_ms"],
-                })
+                grid_results.append(
+                    {
+                        "physics_weight": w_physics,
+                        "gnn_weight": w_gnn,
+                        "cascade_weight": w_cascade,
+                        "f1": metrics["f1"],
+                        "roc_auc": metrics.get("roc_auc"),
+                        "pr_auc": metrics.get("pr_auc"),
+                        "optimal_f1": metrics.get("optimal_f1"),
+                        "optimal_threshold": metrics.get("optimal_threshold"),
+                        "accuracy": metrics["accuracy"],
+                        "precision": metrics["precision"],
+                        "recall": metrics["recall"],
+                        "mean_latency_ms": metrics["mean_latency_ms"],
+                    }
+                )
 
         # Find optimal by ROC-AUC (threshold-independent ranking)
         if grid_results:
@@ -335,12 +365,14 @@ class AblationStudy:
 
         logger.info("Weight sweep complete: %d combinations tested", len(grid_results))
         if optimal:
-            logger.info("  Optimal: physics=%.1f gnn=%.1f cascade=%.2f -> ROC-AUC=%.4f, Opt-F1=%.4f",
-                        optimal.get("physics_weight", 0),
-                        optimal.get("gnn_weight", 0),
-                        optimal.get("cascade_weight", 0),
-                        optimal.get("roc_auc") or 0,
-                        optimal.get("optimal_f1") or 0)
+            logger.info(
+                "  Optimal: physics=%.1f gnn=%.1f cascade=%.2f -> ROC-AUC=%.4f, Opt-F1=%.4f",
+                optimal.get("physics_weight", 0),
+                optimal.get("gnn_weight", 0),
+                optimal.get("cascade_weight", 0),
+                optimal.get("roc_auc") or 0,
+                optimal.get("optimal_f1") or 0,
+            )
 
         return {
             "grid_results": grid_results,
@@ -377,18 +409,21 @@ class AblationStudy:
             logger.info("  Threshold=%.2f", threshold)
             metrics = self._evaluate_config(name, cfg)
 
-            sweep_results.append({
-                "threshold": threshold,
-                "f1": metrics["f1"],
-                "roc_auc": metrics.get("roc_auc"),
-                "optimal_f1": metrics.get("optimal_f1"),
-                "accuracy": metrics["accuracy"],
-                "mean_latency_ms": metrics["mean_latency_ms"],
-                "early_exit_rate": metrics.get("early_exit_rate", 0.0),
-            })
+            sweep_results.append(
+                {
+                    "threshold": threshold,
+                    "f1": metrics["f1"],
+                    "roc_auc": metrics.get("roc_auc"),
+                    "optimal_f1": metrics.get("optimal_f1"),
+                    "accuracy": metrics["accuracy"],
+                    "mean_latency_ms": metrics["mean_latency_ms"],
+                    "early_exit_rate": metrics.get("early_exit_rate", 0.0),
+                }
+            )
 
-        logger.info("Early-exit sweep complete: %d thresholds tested",
-                     len(sweep_results))
+        logger.info(
+            "Early-exit sweep complete: %d thresholds tested", len(sweep_results)
+        )
         return {"sweep_results": sweep_results}
 
     # ------------------------------------------------------------------
@@ -438,12 +473,18 @@ class AblationStudy:
 
             # Evaluate hybrid on this type
             hybrid_metrics = self._evaluate_verifier_on_subset(
-                "hybrid", hybrid, type_samples, verifier_type="hybrid",
+                "hybrid",
+                hybrid,
+                type_samples,
+                verifier_type="hybrid",
             )
 
             # Evaluate baseline on this type
             baseline_metrics = self._evaluate_verifier_on_subset(
-                "baseline", baseline, type_samples, verifier_type="baseline",
+                "baseline",
+                baseline,
+                type_samples,
+                verifier_type="baseline",
             )
 
             results[atype] = {
@@ -489,7 +530,8 @@ class AblationStudy:
 
             if verifier_type == "hybrid" and "_breakdown" in details:
                 combined = details["_breakdown"].get(
-                    "combined_scores", np.array([]),
+                    "combined_scores",
+                    np.array([]),
                 )
                 if len(combined) > 0:
                     score = float(np.mean(combined))
@@ -517,7 +559,8 @@ class AblationStudy:
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
         f1 = (
             2 * precision * recall / (precision + recall)
-            if (precision + recall) > 0 else 0.0
+            if (precision + recall) > 0
+            else 0.0
         )
 
         return {
@@ -550,17 +593,23 @@ class AblationStudy:
             "hybrid_full": HybridVerifierConfig(),
             "physics_only": HybridVerifierConfig(
                 ensemble_weights=EnsembleWeightsConfig(
-                    physics=1.0, gnn=0.0, cascade=0.0,
+                    physics=1.0,
+                    gnn=0.0,
+                    cascade=0.0,
                 ),
             ),
             "gnn_only": HybridVerifierConfig(
                 ensemble_weights=EnsembleWeightsConfig(
-                    physics=0.0, gnn=1.0, cascade=0.0,
+                    physics=0.0,
+                    gnn=1.0,
+                    cascade=0.0,
                 ),
             ),
             "cascade_only": HybridVerifierConfig(
                 ensemble_weights=EnsembleWeightsConfig(
-                    physics=0.0, gnn=0.0, cascade=1.0,
+                    physics=0.0,
+                    gnn=0.0,
+                    cascade=1.0,
                 ),
             ),
         }
@@ -605,8 +654,7 @@ class AblationStudy:
                         physics_compliant += 1
 
             compliance_rate = (
-                physics_compliant / total_detected
-                if total_detected > 0 else 0.0
+                physics_compliant / total_detected if total_detected > 0 else 0.0
             )
 
             results[name] = {
@@ -615,9 +663,13 @@ class AblationStudy:
                 "compliance_rate": compliance_rate,
             }
 
-            logger.info("  %s: %d/%d compliant (%.1f%%)",
-                        name, physics_compliant, total_detected,
-                        compliance_rate * 100)
+            logger.info(
+                "  %s: %d/%d compliant (%.1f%%)",
+                name,
+                physics_compliant,
+                total_detected,
+                compliance_rate * 100,
+            )
 
         return results
 
@@ -697,10 +749,12 @@ class AblationStudy:
         diffs = a - b
         n = len(diffs)
 
-        boot_means = np.array([
-            float(np.mean(rng.choice(diffs, size=n, replace=True)))
-            for _ in range(n_bootstrap)
-        ])
+        boot_means = np.array(
+            [
+                float(np.mean(rng.choice(diffs, size=n, replace=True)))
+                for _ in range(n_bootstrap)
+            ]
+        )
 
         ci_lower = float(np.percentile(boot_means, 2.5))
         ci_upper = float(np.percentile(boot_means, 97.5))
@@ -753,57 +807,63 @@ class AblationStudy:
         significance_tests = {}
 
         # hybrid_full vs baseline
-        if ("hybrid_full" in component_isolation
-                and "baseline" in component_isolation):
+        if "hybrid_full" in component_isolation and "baseline" in component_isolation:
             hybrid_correct = component_isolation["hybrid_full"].get(
-                "per_sample_correct", [],
+                "per_sample_correct",
+                [],
             )
             baseline_correct = component_isolation["baseline"].get(
-                "per_sample_correct", [],
+                "per_sample_correct",
+                [],
             )
             if hybrid_correct and baseline_correct:
-                significance_tests["hybrid_vs_baseline"] = (
-                    self.compute_statistical_significance(
-                        hybrid_correct,
-                        baseline_correct,
-                        "hybrid_full vs baseline",
-                    )
+                significance_tests[
+                    "hybrid_vs_baseline"
+                ] = self.compute_statistical_significance(
+                    hybrid_correct,
+                    baseline_correct,
+                    "hybrid_full vs baseline",
                 )
 
         # hybrid_full vs physics_only
-        if ("hybrid_full" in component_isolation
-                and "physics_only" in component_isolation):
+        if (
+            "hybrid_full" in component_isolation
+            and "physics_only" in component_isolation
+        ):
             hybrid_correct = component_isolation["hybrid_full"].get(
-                "per_sample_correct", [],
+                "per_sample_correct",
+                [],
             )
             physics_correct = component_isolation["physics_only"].get(
-                "per_sample_correct", [],
+                "per_sample_correct",
+                [],
             )
             if hybrid_correct and physics_correct:
-                significance_tests["hybrid_vs_physics_only"] = (
-                    self.compute_statistical_significance(
-                        hybrid_correct,
-                        physics_correct,
-                        "hybrid_full vs physics_only",
-                    )
+                significance_tests[
+                    "hybrid_vs_physics_only"
+                ] = self.compute_statistical_significance(
+                    hybrid_correct,
+                    physics_correct,
+                    "hybrid_full vs physics_only",
                 )
 
         # hybrid_full vs gnn_only
-        if ("hybrid_full" in component_isolation
-                and "gnn_only" in component_isolation):
+        if "hybrid_full" in component_isolation and "gnn_only" in component_isolation:
             hybrid_correct = component_isolation["hybrid_full"].get(
-                "per_sample_correct", [],
+                "per_sample_correct",
+                [],
             )
             gnn_correct = component_isolation["gnn_only"].get(
-                "per_sample_correct", [],
+                "per_sample_correct",
+                [],
             )
             if hybrid_correct and gnn_correct:
-                significance_tests["hybrid_vs_gnn_only"] = (
-                    self.compute_statistical_significance(
-                        hybrid_correct,
-                        gnn_correct,
-                        "hybrid_full vs gnn_only",
-                    )
+                significance_tests[
+                    "hybrid_vs_gnn_only"
+                ] = self.compute_statistical_significance(
+                    hybrid_correct,
+                    gnn_correct,
+                    "hybrid_full vs gnn_only",
                 )
 
         duration_s = time.perf_counter() - t0
@@ -811,8 +871,11 @@ class AblationStudy:
         # Clean per_sample data from results for JSON output
         clean_isolation = {}
         for name, metrics in component_isolation.items():
-            clean = {k: v for k, v in metrics.items()
-                     if k not in ("per_sample_scores", "per_sample_correct")}
+            clean = {
+                k: v
+                for k, v in metrics.items()
+                if k not in ("per_sample_scores", "per_sample_correct")
+            }
             clean_isolation[name] = clean
 
         results = {
@@ -852,17 +915,15 @@ class AblationStudy:
             """Handle numpy types for JSON serialization."""
             if isinstance(obj, np.ndarray):
                 return obj.tolist()
-            if isinstance(obj, (np.integer,)):
+            if isinstance(obj, np.integer):
                 return int(obj)
-            if isinstance(obj, (np.floating,)):
+            if isinstance(obj, np.floating):
                 return float(obj)
             if isinstance(obj, np.bool_):
                 return bool(obj)
             if isinstance(obj, AnomalyType):
                 return obj.name
-            raise TypeError(
-                f"Object of type {type(obj)} is not JSON serializable"
-            )
+            raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
         with open(path, "w") as f:
             json.dump(results, f, indent=2, default=_json_serializer)

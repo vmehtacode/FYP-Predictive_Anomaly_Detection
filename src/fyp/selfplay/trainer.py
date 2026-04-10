@@ -309,7 +309,7 @@ class SelfPlayTrainer:
                 logger.info(
                     f"Validation at episode {episode}: "
                     f"MAE={val_metrics['mae']:.3f}, "
-                    f"constraint_violations={val_metrics['violation_rate']*100:.1f}%"
+                    f"constraint_violations={val_metrics['violation_rate'] * 100:.1f}%"
                 )
 
                 # Check for improvement
@@ -331,7 +331,7 @@ class SelfPlayTrainer:
             logger.info(
                 f"Test results: MAE={test_metrics['mae']:.3f}, "
                 f"MAPE={test_metrics['mape']:.1f}%, "
-                f"constraint violations={test_metrics['violation_rate']*100:.1f}%"
+                f"constraint violations={test_metrics['violation_rate'] * 100:.1f}%"
             )
 
         # Save final checkpoint
@@ -657,7 +657,7 @@ class SelfPlayTrainer:
         window = 10
         for i in range(0, len(self.metrics_history), window):
             window_metrics = self.metrics_history[i : i + window]
-            counts = {st: 0 for st in scenario_types}
+            counts = dict.fromkeys(scenario_types, 0)
             total = 0
 
             for m in window_metrics:

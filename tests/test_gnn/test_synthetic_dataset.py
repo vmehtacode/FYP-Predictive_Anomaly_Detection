@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import pytest
 import torch
-from torch_geometric.data import Batch, Data
+from torch_geometric.data import Batch
 from torch_geometric.loader import DataLoader
 
 from fyp.gnn import AnomalyType, GATVerifier, SyntheticAnomalyDataset
@@ -94,7 +94,9 @@ class TestAnomalyTypes:
             num_samples=100, num_nodes=30, anomaly_ratio=1.0, seed=42
         )
 
-    def test_spike_anomaly(self, forced_anomaly_dataset: SyntheticAnomalyDataset) -> None:
+    def test_spike_anomaly(
+        self, forced_anomaly_dataset: SyntheticAnomalyDataset
+    ) -> None:
         """Verify spike anomalies have elevated feature values."""
         # Find a sample with SPIKE anomaly
         spike_sample = None
@@ -114,7 +116,9 @@ class TestAnomalyTypes:
             # Note: some features might be clamped or below baseline
             assert anomalous_features.mean() > 0.3
 
-    def test_dropout_anomaly(self, forced_anomaly_dataset: SyntheticAnomalyDataset) -> None:
+    def test_dropout_anomaly(
+        self, forced_anomaly_dataset: SyntheticAnomalyDataset
+    ) -> None:
         """Verify dropout anomalies zero out features."""
         # Find a sample with DROPOUT anomaly
         dropout_sample = None
@@ -130,9 +134,13 @@ class TestAnomalyTypes:
         anomalous_mask = dropout_sample.y == 1
         if anomalous_mask.sum() > 0:
             anomalous_features = dropout_sample.x[anomalous_mask]
-            assert torch.allclose(anomalous_features, torch.zeros_like(anomalous_features))
+            assert torch.allclose(
+                anomalous_features, torch.zeros_like(anomalous_features)
+            )
 
-    def test_cascade_anomaly(self, forced_anomaly_dataset: SyntheticAnomalyDataset) -> None:
+    def test_cascade_anomaly(
+        self, forced_anomaly_dataset: SyntheticAnomalyDataset
+    ) -> None:
         """Verify cascade anomaly propagates through edges."""
         # Find a sample with CASCADE anomaly
         cascade_sample = None
@@ -148,7 +156,9 @@ class TestAnomalyTypes:
         num_anomalous = cascade_sample.y.sum().item()
         assert num_anomalous > 0, "CASCADE should have anomalous nodes"
 
-    def test_ramp_violation(self, forced_anomaly_dataset: SyntheticAnomalyDataset) -> None:
+    def test_ramp_violation(
+        self, forced_anomaly_dataset: SyntheticAnomalyDataset
+    ) -> None:
         """Verify ramp violation creates impossible gradients."""
         # Find a sample with RAMP_VIOLATION anomaly
         ramp_sample = None
@@ -166,7 +176,9 @@ class TestAnomalyTypes:
             anomalous_features = ramp_sample.x[anomalous_mask]
             # Check for high variance in features (alternating pattern)
             var_per_node = anomalous_features.var(dim=1)
-            assert var_per_node.mean() > 0.5, "RAMP_VIOLATION should have high feature variance"
+            assert (
+                var_per_node.mean() > 0.5
+            ), "RAMP_VIOLATION should have high feature variance"
 
     def test_all_anomaly_types_present(self) -> None:
         """Verify all anomaly types are generated."""
@@ -176,7 +188,12 @@ class TestAnomalyTypes:
         stats = ds.get_anomaly_statistics()
 
         # All non-NORMAL types should be present
-        for atype in [AnomalyType.SPIKE, AnomalyType.DROPOUT, AnomalyType.CASCADE, AnomalyType.RAMP_VIOLATION]:
+        for atype in [
+            AnomalyType.SPIKE,
+            AnomalyType.DROPOUT,
+            AnomalyType.CASCADE,
+            AnomalyType.RAMP_VIOLATION,
+        ]:
             assert stats[atype.name] > 0, f"Missing anomaly type: {atype.name}"
 
 
@@ -419,7 +436,10 @@ class TestGraphStructure:
 
             # For each edge (a, b), reverse (b, a) should exist
             for src, dst in edge_set:
-                assert (dst, src) in edge_set, f"Missing reverse edge for ({src}, {dst})"
+                assert (
+                    dst,
+                    src,
+                ) in edge_set, f"Missing reverse edge for ({src}, {dst})"
 
     def test_no_self_loops_in_edges(self) -> None:
         """Verify no self-loops in generated edges."""

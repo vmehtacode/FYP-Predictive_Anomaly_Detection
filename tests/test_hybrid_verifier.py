@@ -34,7 +34,6 @@ from fyp.selfplay.hybrid_verifier_config import (
     load_hybrid_verifier_config,
 )
 
-
 # ============================================================================
 # Fixtures
 # ============================================================================
@@ -116,9 +115,9 @@ class TestHybridVerifierConfig:
 
     def test_config_invalid_threshold_rejected(self) -> None:
         """Pydantic rejects early_exit_threshold > 1 or < 0."""
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             HybridVerifierConfig(early_exit_threshold=1.5)
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             HybridVerifierConfig(early_exit_threshold=-0.1)
 
 
@@ -195,26 +194,18 @@ class TestPhysicsConstraintLayer:
         scores, details = physics_layer.evaluate(forecast)
         assert np.all(scores >= 0.9)
 
-    def test_capacity_violation(
-        self, physics_layer: PhysicsConstraintLayer
-    ) -> None:
+    def test_capacity_violation(self, physics_layer: PhysicsConstraintLayer) -> None:
         """Values exceeding absolute_max_kw -> high scores."""
         forecast = np.full(5, 230.0)
         power_values = np.full(5, 120.0)
-        scores, details = physics_layer.evaluate(
-            forecast, power_values=power_values
-        )
+        scores, details = physics_layer.evaluate(forecast, power_values=power_values)
         assert np.all(details["capacity_scores"] >= 0.9)
 
-    def test_ramp_rate_violation(
-        self, physics_layer: PhysicsConstraintLayer
-    ) -> None:
+    def test_ramp_rate_violation(self, physics_layer: PhysicsConstraintLayer) -> None:
         """Large consecutive differences -> high ramp scores."""
         forecast = np.full(5, 230.0)
         power_values = np.array([10.0, 20.0, 10.0, 20.0, 10.0])
-        scores, details = physics_layer.evaluate(
-            forecast, power_values=power_values
-        )
+        scores, details = physics_layer.evaluate(forecast, power_values=power_values)
         assert np.any(details["ramp_scores"] > 0.5)
 
     def test_output_shape_matches_input(
@@ -226,9 +217,7 @@ class TestPhysicsConstraintLayer:
             scores, _ = physics_layer.evaluate(forecast)
             assert len(scores) == n
 
-    def test_scores_in_range(
-        self, physics_layer: PhysicsConstraintLayer
-    ) -> None:
+    def test_scores_in_range(self, physics_layer: PhysicsConstraintLayer) -> None:
         """All scores in [0, 1]."""
         forecast = np.random.uniform(200.0, 260.0, size=50)
         scores, _ = physics_layer.evaluate(forecast)
@@ -241,7 +230,12 @@ class TestPhysicsConstraintLayer:
         """Details dict has voltage_scores, capacity_scores, ramp_scores, combined_scores."""
         forecast = np.full(5, 230.0)
         _, details = physics_layer.evaluate(forecast)
-        for key in ["voltage_scores", "capacity_scores", "ramp_scores", "combined_scores"]:
+        for key in [
+            "voltage_scores",
+            "capacity_scores",
+            "ramp_scores",
+            "combined_scores",
+        ]:
             assert key in details
             assert len(details[key]) == 5
 
@@ -369,8 +363,13 @@ class TestEnsembleCombination:
         _, breakdown = _combine_scores(physics, gnn, cascade, mask, weights)
 
         for key in [
-            "physics_scores", "gnn_scores", "cascade_scores",
-            "combined_scores", "early_exit_mask", "early_exit_count", "weights",
+            "physics_scores",
+            "gnn_scores",
+            "cascade_scores",
+            "combined_scores",
+            "early_exit_mask",
+            "early_exit_count",
+            "weights",
         ]:
             assert key in breakdown, f"Missing key: {key}"
 
@@ -411,17 +410,13 @@ class TestRewardComputation:
         reward = hybrid_verifier.evaluate(forecast, scenario=scenario)
         assert reward < 0.0
 
-    def test_false_positive_penalty(
-        self, hybrid_verifier: HybridVerifierAgent
-    ) -> None:
+    def test_false_positive_penalty(self, hybrid_verifier: HybridVerifierAgent) -> None:
         """Anomalous-looking forecast when no scenario -> negative reward."""
         forecast = np.full(10, 260.0)  # violation -> predicted anomaly
         reward = hybrid_verifier.evaluate(forecast, scenario=None)
         assert reward < 0.0
 
-    def test_reward_in_range(
-        self, hybrid_verifier: HybridVerifierAgent
-    ) -> None:
+    def test_reward_in_range(self, hybrid_verifier: HybridVerifierAgent) -> None:
         """Reward always in [-1, +1] for various inputs."""
         test_cases = [
             (np.full(5, 230.0), None),
@@ -443,15 +438,11 @@ class TestRewardComputation:
         normal_forecast = np.full(10, 230.0)
 
         # FN: predicted normal, scenario present
-        fn_reward = hybrid_verifier.evaluate(
-            normal_forecast, scenario=MagicMock()
-        )
+        fn_reward = hybrid_verifier.evaluate(normal_forecast, scenario=MagicMock())
 
         # FP: predicted anomaly, no scenario
         anomalous_forecast = np.full(10, 260.0)
-        fp_reward = hybrid_verifier.evaluate(
-            anomalous_forecast, scenario=None
-        )
+        fp_reward = hybrid_verifier.evaluate(anomalous_forecast, scenario=None)
 
         # Both should be negative
         assert fn_reward < 0.0
@@ -482,15 +473,18 @@ class TestHybridVerifierIntegration:
         # Both should have: self, forecast, scenario, timestamps, return_details
         for param_name in ["forecast", "scenario", "timestamps", "return_details"]:
             assert param_name in hybrid_params, f"Missing param: {param_name}"
-            assert param_name in verifier_params, f"Missing param in VerifierAgent: {param_name}"
+            assert (
+                param_name in verifier_params
+            ), f"Missing param in VerifierAgent: {param_name}"
 
         # Defaults should be compatible
-        assert hybrid_params["scenario"].default is None or hybrid_params["scenario"].default == inspect.Parameter.empty
+        assert (
+            hybrid_params["scenario"].default is None
+            or hybrid_params["scenario"].default == inspect.Parameter.empty
+        )
         assert hybrid_params["return_details"].default is False
 
-    def test_evaluate_returns_float(
-        self, hybrid_verifier: HybridVerifierAgent
-    ) -> None:
+    def test_evaluate_returns_float(self, hybrid_verifier: HybridVerifierAgent) -> None:
         """evaluate(forecast) returns float."""
         forecast = np.full(10, 230.0)
         result = hybrid_verifier.evaluate(forecast)
@@ -634,8 +628,13 @@ class TestHybridVerifierIntegration:
         # _breakdown should have full diagnostic info
         bd = details["_breakdown"]
         for field in [
-            "physics_scores", "gnn_scores", "cascade_scores",
-            "combined_scores", "early_exit_mask", "early_exit_count", "weights",
+            "physics_scores",
+            "gnn_scores",
+            "cascade_scores",
+            "combined_scores",
+            "early_exit_mask",
+            "early_exit_count",
+            "weights",
         ]:
             assert field in bd, f"Missing field '{field}' in _breakdown"
 
@@ -657,18 +656,14 @@ class TestEdgeCases:
         assert isinstance(reward, float)
         assert -1.0 <= reward <= 1.0
 
-    def test_large_forecast(
-        self, hybrid_verifier: HybridVerifierAgent
-    ) -> None:
+    def test_large_forecast(self, hybrid_verifier: HybridVerifierAgent) -> None:
         """Forecast with 1000 elements."""
         forecast = np.random.uniform(220, 240, size=1000)
         reward = hybrid_verifier.evaluate(forecast)
         assert isinstance(reward, float)
         assert -1.0 <= reward <= 1.0
 
-    def test_all_zeros_forecast(
-        self, hybrid_verifier: HybridVerifierAgent
-    ) -> None:
+    def test_all_zeros_forecast(self, hybrid_verifier: HybridVerifierAgent) -> None:
         """All zeros (edge case for capacity/ramp)."""
         forecast = np.zeros(10)
         reward = hybrid_verifier.evaluate(forecast)

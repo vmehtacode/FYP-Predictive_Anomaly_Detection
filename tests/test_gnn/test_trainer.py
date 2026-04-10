@@ -87,7 +87,9 @@ class TestTrainingLoop:
         model = GATVerifier(temporal_features=5, hidden_channels=16, heads=2)
         return GNNTrainer(model, learning_rate=0.01)
 
-    def test_single_epoch(self, trainer: GNNTrainer, small_dataset: SyntheticAnomalyDataset) -> None:
+    def test_single_epoch(
+        self, trainer: GNNTrainer, small_dataset: SyntheticAnomalyDataset
+    ) -> None:
         """Test training for 1 epoch completes."""
         history = trainer.train(
             train_dataset=small_dataset,
@@ -98,7 +100,9 @@ class TestTrainingLoop:
         assert "train_loss" in history
         assert len(history["train_loss"]) == 1
 
-    def test_loss_computed(self, trainer: GNNTrainer, small_dataset: SyntheticAnomalyDataset) -> None:
+    def test_loss_computed(
+        self, trainer: GNNTrainer, small_dataset: SyntheticAnomalyDataset
+    ) -> None:
         """Test loss is computed for each epoch."""
         history = trainer.train(
             train_dataset=small_dataset,
@@ -109,7 +113,9 @@ class TestTrainingLoop:
         assert len(history["train_loss"]) == 3
         assert all(loss > 0 for loss in history["train_loss"])
 
-    def test_loss_decreases(self, trainer: GNNTrainer, small_dataset: SyntheticAnomalyDataset) -> None:
+    def test_loss_decreases(
+        self, trainer: GNNTrainer, small_dataset: SyntheticAnomalyDataset
+    ) -> None:
         """Test loss generally decreases over training."""
         history = trainer.train(
             train_dataset=small_dataset,
@@ -124,12 +130,13 @@ class TestTrainingLoop:
         # Loss should generally decrease (allow some variance)
         assert late_avg <= early_avg * 1.2  # Allow 20% tolerance
 
-    def test_model_weights_updated(self, trainer: GNNTrainer, small_dataset: SyntheticAnomalyDataset) -> None:
+    def test_model_weights_updated(
+        self, trainer: GNNTrainer, small_dataset: SyntheticAnomalyDataset
+    ) -> None:
         """Test model weights change after training."""
         # Get initial weights
         initial_weights = {
-            name: param.clone()
-            for name, param in trainer.model.named_parameters()
+            name: param.clone() for name, param in trainer.model.named_parameters()
         }
 
         # Train
@@ -148,7 +155,9 @@ class TestTrainingLoop:
 
         assert weights_changed, "Model weights should change after training"
 
-    def test_gradient_flow(self, trainer: GNNTrainer, small_dataset: SyntheticAnomalyDataset) -> None:
+    def test_gradient_flow(
+        self, trainer: GNNTrainer, small_dataset: SyntheticAnomalyDataset
+    ) -> None:
         """Test gradients are computed during training."""
         from torch_geometric.loader import DataLoader
 
@@ -171,7 +180,9 @@ class TestTrainingLoop:
 
         assert has_grad, "Gradients should be computed"
 
-    def test_batch_processing(self, trainer: GNNTrainer, small_dataset: SyntheticAnomalyDataset) -> None:
+    def test_batch_processing(
+        self, trainer: GNNTrainer, small_dataset: SyntheticAnomalyDataset
+    ) -> None:
         """Test multiple batches are processed correctly."""
         history = trainer.train(
             train_dataset=small_dataset,
@@ -182,7 +193,9 @@ class TestTrainingLoop:
         # Should complete without error
         assert len(history["train_loss"]) == 2
 
-    def test_accuracy_tracked(self, trainer: GNNTrainer, small_dataset: SyntheticAnomalyDataset) -> None:
+    def test_accuracy_tracked(
+        self, trainer: GNNTrainer, small_dataset: SyntheticAnomalyDataset
+    ) -> None:
         """Test accuracy is tracked during training."""
         history = trainer.train(
             train_dataset=small_dataset,
@@ -201,8 +214,12 @@ class TestValidation:
     @pytest.fixture
     def datasets(self) -> tuple[SyntheticAnomalyDataset, SyntheticAnomalyDataset]:
         """Create train and validation datasets."""
-        train = SyntheticAnomalyDataset(num_samples=50, num_nodes=20, temporal_features=5, seed=42)
-        val = SyntheticAnomalyDataset(num_samples=20, num_nodes=20, temporal_features=5, seed=43)
+        train = SyntheticAnomalyDataset(
+            num_samples=50, num_nodes=20, temporal_features=5, seed=42
+        )
+        val = SyntheticAnomalyDataset(
+            num_samples=20, num_nodes=20, temporal_features=5, seed=43
+        )
         return train, val
 
     @pytest.fixture
@@ -257,7 +274,9 @@ class TestValidation:
         # At minimum, check stopped_early flag or length
         assert "stopped_early" in history
 
-    def test_best_val_accuracy_tracked(self, trainer: GNNTrainer, datasets: tuple) -> None:
+    def test_best_val_accuracy_tracked(
+        self, trainer: GNNTrainer, datasets: tuple
+    ) -> None:
         """Test best validation accuracy is tracked."""
         train, val = datasets
 
@@ -531,9 +550,9 @@ class TestMetricsComputation:
         # 3 correct out of 5
         assert metrics["accuracy"] == 0.6
         # Precision: TP=2, FP=1 -> 2/3
-        assert abs(metrics["precision"] - 2/3) < 0.01
+        assert abs(metrics["precision"] - 2 / 3) < 0.01
         # Recall: TP=2, FN=1 -> 2/3
-        assert abs(metrics["recall"] - 2/3) < 0.01
+        assert abs(metrics["recall"] - 2 / 3) < 0.01
 
     def test_compute_metrics_no_positives(self, trainer: GNNTrainer) -> None:
         """Test metrics when no positive predictions."""

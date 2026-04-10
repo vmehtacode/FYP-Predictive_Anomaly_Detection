@@ -6,6 +6,7 @@ methods on energy consumption forecasting.
 
 Goal: Show >20% improvement over Naive baseline.
 """
+
 import json
 import sys
 from pathlib import Path

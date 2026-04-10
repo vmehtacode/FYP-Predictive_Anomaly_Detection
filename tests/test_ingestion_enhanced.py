@@ -115,7 +115,7 @@ class TestDSTCorrectness:
         for i in range(1, len(processed_timestamps)):
             assert (
                 processed_timestamps[i] > processed_timestamps[i - 1]
-            ), f"Non-monotonic timestamps at {i}: {processed_timestamps[i-1]} -> {processed_timestamps[i]}"
+            ), f"Non-monotonic timestamps at {i}: {processed_timestamps[i - 1]} -> {processed_timestamps[i]}"
 
         # Check no duplicates
         unique_timestamps = set(processed_timestamps)
@@ -146,7 +146,7 @@ class TestDSTCorrectness:
         for i in range(1, len(processed_timestamps)):
             assert (
                 processed_timestamps[i] > processed_timestamps[i - 1]
-            ), f"Non-monotonic timestamps at {i}: {processed_timestamps[i-1]} -> {processed_timestamps[i]}"
+            ), f"Non-monotonic timestamps at {i}: {processed_timestamps[i - 1]} -> {processed_timestamps[i]}"
 
     def test_ensure_monotonic_timestamps(self):
         """Test monotonic timestamp enforcement."""
@@ -337,7 +337,7 @@ class TestDSTSpecific:
         for i in range(1, len(utc_timestamps)):
             assert (
                 utc_timestamps[i] > utc_timestamps[i - 1]
-            ), f"Non-monotonic UTC timestamps: {utc_timestamps[i-1]} -> {utc_timestamps[i]}"
+            ), f"Non-monotonic UTC timestamps: {utc_timestamps[i - 1]} -> {utc_timestamps[i]}"
 
         # Check that we have no duplicate UTC timestamps
         assert len(set(utc_timestamps)) == len(utc_timestamps)
@@ -368,7 +368,7 @@ class TestDSTSpecific:
         for i in range(1, len(utc_timestamps)):
             assert (
                 utc_timestamps[i] > utc_timestamps[i - 1]
-            ), f"Non-monotonic UTC at fall transition: {utc_timestamps[i-1]} -> {utc_timestamps[i]}"
+            ), f"Non-monotonic UTC at fall transition: {utc_timestamps[i - 1]} -> {utc_timestamps[i]}"
 
     def test_ukdale_timezone_conversion(self):
         """Test UK-DALE timestamp conversion to UTC."""

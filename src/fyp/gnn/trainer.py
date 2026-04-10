@@ -15,7 +15,6 @@ The training pipeline supports:
 from __future__ import annotations
 
 import logging
-import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -346,7 +345,11 @@ class GNNTrainer:
 
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-        f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
+        f1 = (
+            2 * precision * recall / (precision + recall)
+            if (precision + recall) > 0
+            else 0.0
+        )
 
         return {
             "accuracy": accuracy,
@@ -419,7 +422,7 @@ def train_gnn_verifier(
     early_stopping_patience: int = 10,
     device: str = "cpu",
     seed: int | None = None,
-    **kwargs,
+    **_kwargs,
 ) -> tuple[GATVerifier, dict]:
     """Train a GATVerifier model from scratch.
 

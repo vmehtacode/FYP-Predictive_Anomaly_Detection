@@ -15,14 +15,11 @@ from __future__ import annotations
 import json
 import os
 import tempfile
-from pathlib import Path
 
-import numpy as np
 import pytest
 
-from fyp.evaluation.benchmark import VerifierBenchmark
 from fyp.evaluation.ablation import AblationStudy
-
+from fyp.evaluation.benchmark import VerifierBenchmark
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -56,17 +53,18 @@ class TestVerifierBenchmark:
     """Tests for the VerifierBenchmark class."""
 
     def test_benchmark_creates_all_configurations(
-        self, benchmark: VerifierBenchmark,
+        self,
+        benchmark: VerifierBenchmark,
     ) -> None:
         """Benchmark should create at least 8 configurations."""
         configs = benchmark._create_configurations()
-        assert len(configs) >= 8, (
-            f"Expected at least 8 configs, got {len(configs)}: "
-            f"{list(configs.keys())}"
-        )
+        assert (
+            len(configs) >= 8
+        ), f"Expected at least 8 configs, got {len(configs)}: {list(configs.keys())}"
 
     def test_benchmark_generates_test_data(
-        self, benchmark: VerifierBenchmark,
+        self,
+        benchmark: VerifierBenchmark,
     ) -> None:
         """Test data generation returns list of dicts with required keys."""
         test_data = benchmark._generate_test_data()
@@ -75,8 +73,12 @@ class TestVerifierBenchmark:
         assert len(test_data) == benchmark.num_samples
 
         required_keys = {
-            "forecast", "node_labels", "has_anomaly",
-            "anomaly_type", "edge_index", "node_type",
+            "forecast",
+            "node_labels",
+            "has_anomaly",
+            "anomaly_type",
+            "edge_index",
+            "node_type",
         }
         for sample in test_data:
             assert isinstance(sample, dict)
@@ -85,13 +87,14 @@ class TestVerifierBenchmark:
             ), f"Missing keys: {required_keys - sample.keys()}"
 
     def test_benchmark_runs_all_configurations(
-        self, benchmark_results: dict,
+        self,
+        benchmark_results: dict,
     ) -> None:
         """Benchmark should produce results for all configurations."""
         configs = benchmark_results.get("configurations", {})
-        assert len(configs) >= 8, (
-            f"Expected at least 8 config results, got {len(configs)}"
-        )
+        assert (
+            len(configs) >= 8
+        ), f"Expected at least 8 config results, got {len(configs)}"
 
         # Check required metric keys for non-error results
         required_metrics = {"accuracy", "precision", "recall", "f1", "mean_latency_ms"}
@@ -103,7 +106,8 @@ class TestVerifierBenchmark:
             ), f"Config {name} missing metrics: {required_metrics - result.keys()}"
 
     def test_benchmark_results_have_required_metrics(
-        self, benchmark_results: dict,
+        self,
+        benchmark_results: dict,
     ) -> None:
         """Each configuration result must contain standard metrics."""
         configs = benchmark_results.get("configurations", {})
@@ -114,17 +118,18 @@ class TestVerifierBenchmark:
             if "error" in result:
                 continue
             for metric in required:
-                assert metric in result, (
-                    f"Metric '{metric}' missing in '{name}' results"
-                )
+                assert (
+                    metric in result
+                ), f"Metric '{metric}' missing in '{name}' results"
             # Ranking-based metrics must be present (may be None)
             for metric in ranking_metrics:
-                assert metric in result, (
-                    f"Ranking metric '{metric}' missing in '{name}' results"
-                )
+                assert (
+                    metric in result
+                ), f"Ranking metric '{metric}' missing in '{name}' results"
 
     def test_benchmark_metrics_in_valid_range(
-        self, benchmark_results: dict,
+        self,
+        benchmark_results: dict,
     ) -> None:
         """Classification metrics should be in [0, 1]; latency should be positive."""
         configs = benchmark_results.get("configurations", {})
@@ -135,29 +140,25 @@ class TestVerifierBenchmark:
                 continue
             for m in bounded_metrics:
                 val = result.get(m, 0.0)
-                assert 0.0 <= val <= 1.0, (
-                    f"{name}.{m} = {val} is outside [0, 1]"
-                )
+                assert 0.0 <= val <= 1.0, f"{name}.{m} = {val} is outside [0, 1]"
             latency = result.get("mean_latency_ms", 0.0)
-            assert latency >= 0.0, (
-                f"{name}.mean_latency_ms = {latency} is negative"
-            )
+            assert latency >= 0.0, f"{name}.mean_latency_ms = {latency} is negative"
             # Ranking-based metrics: valid when not None
             roc_auc = result.get("roc_auc")
             if roc_auc is not None:
-                assert 0.0 <= roc_auc <= 1.0, (
-                    f"{name}.roc_auc = {roc_auc} is outside [0, 1]"
-                )
+                assert (
+                    0.0 <= roc_auc <= 1.0
+                ), f"{name}.roc_auc = {roc_auc} is outside [0, 1]"
             pr_auc = result.get("pr_auc")
             if pr_auc is not None:
-                assert 0.0 <= pr_auc <= 1.0, (
-                    f"{name}.pr_auc = {pr_auc} is outside [0, 1]"
-                )
+                assert (
+                    0.0 <= pr_auc <= 1.0
+                ), f"{name}.pr_auc = {pr_auc} is outside [0, 1]"
             opt_f1 = result.get("optimal_f1")
             if opt_f1 is not None:
-                assert 0.0 <= opt_f1 <= 1.0, (
-                    f"{name}.optimal_f1 = {opt_f1} is outside [0, 1]"
-                )
+                assert (
+                    0.0 <= opt_f1 <= 1.0
+                ), f"{name}.optimal_f1 = {opt_f1} is outside [0, 1]"
 
     def test_benchmark_reproducible_with_seed(self) -> None:
         """Running benchmark twice with the same seed should produce identical F1."""
@@ -175,16 +176,18 @@ class TestVerifierBenchmark:
                 continue
             f1_1 = configs1[name].get("f1", 0.0)
             f1_2 = configs2[name].get("f1", 0.0)
-            assert abs(f1_1 - f1_2) < 1e-6, (
-                f"F1 mismatch for {name}: {f1_1} vs {f1_2}"
-            )
+            assert abs(f1_1 - f1_2) < 1e-6, f"F1 mismatch for {name}: {f1_1} vs {f1_2}"
 
     def test_benchmark_saves_json(
-        self, benchmark: VerifierBenchmark, benchmark_results: dict,
+        self,
+        benchmark: VerifierBenchmark,
+        benchmark_results: dict,
     ) -> None:
         """Saving and reloading results JSON should preserve data."""
         with tempfile.NamedTemporaryFile(
-            suffix=".json", delete=False, mode="w",
+            suffix=".json",
+            delete=False,
+            mode="w",
         ) as f:
             tmp_path = f.name
 
@@ -209,15 +212,16 @@ class TestVerifierBenchmark:
             os.unlink(tmp_path)
 
     def test_benchmark_includes_all_eval02_baselines(
-        self, benchmark_results: dict,
+        self,
+        benchmark_results: dict,
     ) -> None:
         """EVAL-02: benchmark must include isolation_forest, autoencoder, and decomposition."""
         configs = benchmark_results.get("configurations", {})
         required_baselines = {"isolation_forest", "autoencoder", "decomposition"}
         found = required_baselines.intersection(configs.keys())
-        assert found == required_baselines, (
-            f"EVAL-02 requires {required_baselines}, found only {found}"
-        )
+        assert (
+            found == required_baselines
+        ), f"EVAL-02 requires {required_baselines}, found only {found}"
 
 
 # ---------------------------------------------------------------------------
@@ -229,7 +233,8 @@ class TestAblationStudy:
     """Tests for the AblationStudy class."""
 
     def test_component_isolation_runs(
-        self, ablation_study: AblationStudy,
+        self,
+        ablation_study: AblationStudy,
     ) -> None:
         """Component isolation should return results for all configs."""
         results = ablation_study.run_component_isolation()
@@ -239,16 +244,15 @@ class TestAblationStudy:
         assert "baseline" in results
         single_components = {"physics_only", "gnn_only", "cascade_only"}
         found = single_components.intersection(results.keys())
-        assert len(found) >= 3, (
-            f"Expected at least 3 single components, found: {found}"
-        )
+        assert len(found) >= 3, f"Expected at least 3 single components, found: {found}"
 
         # Each result has F1
         for name, metrics in results.items():
             assert "f1" in metrics, f"Missing F1 in {name}"
 
     def test_weight_sweep_runs(
-        self, ablation_study: AblationStudy,
+        self,
+        ablation_study: AblationStudy,
     ) -> None:
         """Weight sweep should return grid results with valid F1 values."""
         results = ablation_study.run_weight_sweep(quick=True)
@@ -267,7 +271,8 @@ class TestAblationStudy:
             assert 0.0 <= point["f1"] <= 1.0
 
     def test_early_exit_sweep_runs(
-        self, ablation_study: AblationStudy,
+        self,
+        ablation_study: AblationStudy,
     ) -> None:
         """Early-exit sweep should return threshold vs metrics curves."""
         results = ablation_study.run_early_exit_sweep(quick=True)
@@ -283,7 +288,8 @@ class TestAblationStudy:
             assert 0.0 <= point["f1"] <= 1.0
 
     def test_per_anomaly_type_analysis_runs(
-        self, ablation_study: AblationStudy,
+        self,
+        ablation_study: AblationStudy,
     ) -> None:
         """Per-anomaly-type analysis should return per-type breakdown."""
         results = ablation_study.run_per_anomaly_type_analysis()
@@ -297,7 +303,8 @@ class TestAblationStudy:
             assert "baseline" in data, f"Missing baseline results for {atype}"
 
     def test_physics_compliance_computed(
-        self, ablation_study: AblationStudy,
+        self,
+        ablation_study: AblationStudy,
     ) -> None:
         """Physics compliance should return rates for multiple configs."""
         results = ablation_study.compute_physics_compliance_rate()
@@ -309,12 +316,11 @@ class TestAblationStudy:
             assert "compliance_rate" in data, f"Missing compliance_rate in {name}"
             assert "total_detected" in data
             rate = data["compliance_rate"]
-            assert 0.0 <= rate <= 1.0, (
-                f"{name} compliance_rate {rate} outside [0, 1]"
-            )
+            assert 0.0 <= rate <= 1.0, f"{name} compliance_rate {rate} outside [0, 1]"
 
     def test_significance_test_returns_p_value(
-        self, ablation_study: AblationStudy,
+        self,
+        ablation_study: AblationStudy,
     ) -> None:
         """Significance test should return a p_value between 0 and 1."""
         # Create two different score vectors
@@ -322,7 +328,9 @@ class TestAblationStudy:
         scores_b = [0, 1, 0, 1, 1, 0, 0, 1, 0, 1]
 
         result = ablation_study.compute_statistical_significance(
-            scores_a, scores_b, "test_comparison",
+            scores_a,
+            scores_b,
+            "test_comparison",
         )
 
         assert "p_value" in result or "ci_lower" in result
@@ -383,7 +391,7 @@ class TestIntegration:
             assert "weight_sweep" in loaded_ablation
 
             # 5. Verify metric values are sensible
-            for name, cfg in loaded_bench["configurations"].items():
+            for _name, cfg in loaded_bench["configurations"].items():
                 if "error" in cfg:
                     continue
                 assert 0.0 <= cfg["f1"] <= 1.0
