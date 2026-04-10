@@ -7577,6 +7577,7 @@ description = "Base classes for sklearn-like parametric objects"
 optional = false
 python-versions = "<3.13,>=3.8"
 groups = ["main"]
+markers = "python_version == \"3.11\""
 files = [
     {file = "scikit-base-0.6.2.tar.gz", hash = "sha256:ac7c1dd9b1006e1e466d8269074f7fb02b7f5143c615f7fdf6a1e0c7565431fe"},
     {file = "scikit_base-0.6.2-py3-none-any.whl", hash = "sha256:91af9fdc6f8e35cbb1a89436f127681a64957645be0039a38d343381abef9154"},
@@ -7587,6 +7588,27 @@ all-extras = ["numpy", "pandas"]
 binder = ["jupyter"]
 dev = ["pre-commit", "pytest", "pytest-cov", "scikit-learn (>=0.24.0)"]
 docs = ["Sphinx (!=7.2.0,<8.0.0)", "jupyter", "myst-parser", "nbsphinx (>=0.8.6)", "numpydoc", "pydata-sphinx-theme", "sphinx-design (<0.6.0)", "sphinx-gallery (<0.16.0)", "sphinx-issues (<4.0.0)", "sphinx-panels", "tabulate"]
+linters = ["black", "doc8", "flake8", "flake8-bugbear", "flake8-builtins", "flake8-comprehensions", "flake8-print", "flake8-quotes", "isort", "mypy", "nbqa", "pandas-vet", "pep8-naming", "pydocstyle"]
+test = ["coverage", "numpy", "pandas", "pytest", "pytest-cov", "safety", "scikit-learn (>=0.24.0)", "scipy"]
+
+[[package]]
+name = "scikit-base"
+version = "0.13.1"
+description = "Base classes for sklearn-like parametric objects"
+optional = false
+python-versions = "<3.15,>=3.10"
+groups = ["main"]
+markers = "python_version >= \"3.12\""
+files = [
+    {file = "scikit_base-0.13.1-py3-none-any.whl", hash = "sha256:1aca86759435fd2d32d83a526ce11095119c0745e4e5dd91f2e5820023ca8e39"},
+    {file = "scikit_base-0.13.1.tar.gz", hash = "sha256:169e5427233f7237b38c7d858bf07b8a86bbf59feccf0708e26dad4ac312c593"},
+]
+
+[package.extras]
+all-extras = ["numpy", "pandas"]
+binder = ["jupyter"]
+dev = ["pre-commit", "pytest", "pytest-cov", "scikit-learn (>=0.24.0)"]
+docs = ["Sphinx (!=7.2.0,<10.0.0)", "jupyter", "myst-parser", "nbsphinx (>=0.8.6)", "numpydoc", "pydata-sphinx-theme", "sphinx-design (<0.7.0)", "sphinx-gallery (<0.21.0)", "sphinx-issues (<6.0.0)", "sphinx-panels", "tabulate"]
 linters = ["black", "doc8", "flake8", "flake8-bugbear", "flake8-builtins", "flake8-comprehensions", "flake8-print", "flake8-quotes", "isort", "mypy", "nbqa", "pandas-vet", "pep8-naming", "pydocstyle"]
 test = ["coverage", "numpy", "pandas", "pytest", "pytest-cov", "safety", "scikit-learn (>=0.24.0)", "scipy"]
 
@@ -7870,45 +7892,55 @@ files = [
 
 [[package]]
 name = "sktime"
-version = "0.24.2"
+version = "0.40.1"
 description = "A unified framework for machine learning with time series"
 optional = false
-python-versions = "<3.13,>=3.8"
+python-versions = "<3.15,>=3.10"
 groups = ["main"]
 files = [
-    {file = "sktime-0.24.2-py3-none-any.whl", hash = "sha256:4c47d08fc11eddb77c8f5ca64509802a4972b33e1518aa801c4501472100012d"},
-    {file = "sktime-0.24.2.tar.gz", hash = "sha256:587450908035482b8e5bba7344424706e200496c951d8baf4835148333f74168"},
+    {file = "sktime-0.40.1-py3-none-any.whl", hash = "sha256:130bb0c39ca4377e491c4dfa64c8ac67c3de2660dd406dd7690db6a8ac349c4e"},
+    {file = "sktime-0.40.1.tar.gz", hash = "sha256:bbf3c2971c7ad388fbebc1d1fb573e20f730e6486c00935b336d8edf13bca04d"},
 ]
 
 [package.dependencies]
-numpy = ">=1.21,<1.27"
+joblib = ">=1.2.0,<1.6"
+numpy = ">=1.21,<2.4"
 packaging = "*"
-pandas = ">=1.1,<2.2.0"
-scikit-base = "<0.7.0"
-scikit-learn = ">=0.24,<1.4.0"
+pandas = ">=1.1,<2.4.0"
+scikit-base = ">=0.6.1,<0.14.0"
+scikit-learn = ">=0.24,<1.8.0"
 scipy = ">=1.2,<2.0.0"
 
 [package.extras]
-alignment = ["dtw-python (>=1.3,<1.4)", "numba (>=0.53,<0.59) ; python_version < \"3.12\""]
-all-extras = ["arch (>=5.6,<6.3.0)", "cloudpickle", "dash (!=2.9.0)", "dask", "dtw-python", "esig (==0.9.7) ; python_version < \"3.10\"", "filterpy (>=1.4.5) ; python_version < \"3.11\"", "gluonts (>=0.9)", "h5py ; python_version < \"3.12\"", "hmmlearn (>=0.2.7) ; python_version < \"3.11\"", "holidays", "keras-self-attention ; python_version < \"3.11\"", "kotsu (>=0.3.1)", "matplotlib (>=3.3.2)", "mne", "numba (>=0.53,<0.59) ; python_version < \"3.12\"", "pmdarima (>=1.8,!=1.8.1,<3.0.0) ; python_version < \"3.12\"", "prophet (>=1.1) ; python_version < \"3.12\"", "pycatch22 (<0.4.4)", "pykalman-bardo (>=0.9.7,<0.10)", "pyod (>=0.8) ; python_version < \"3.11\"", "scikit-optimize", "scikit-posthocs (>=0.6.5)", "seaborn (>=0.11)", "seasonal", "skpro (>=2,<2.2.0)", "statsforecast (>=0.5.2,<1.7.0) ; python_version < \"3.12\"", "statsmodels (>=0.12.1)", "stumpy (>=1.5.1) ; python_version < \"3.11\"", "tbats (>=1.1) ; python_version < \"3.12\"", "tensorflow ; python_version < \"3.12\"", "tsfresh (>=0.17) ; python_version < \"3.12\"", "tslearn (>=0.5.2,<0.6.0) ; python_version < \"3.11\"", "xarray"]
-all-extras-pandas2 = ["arch (>=5.6,<6.3.0)", "cloudpickle", "dash (!=2.9.0)", "dask (<2023.12.2)", "dtw-python", "esig (==0.9.7) ; python_version < \"3.10\"", "filterpy (>=1.4.5) ; python_version < \"3.11\"", "gluonts (>=0.9)", "h5py ; python_version < \"3.12\"", "hmmlearn (>=0.2.7) ; python_version < \"3.11\"", "holidays", "keras-self-attention ; python_version < \"3.11\"", "kotsu (>=0.3.1)", "matplotlib (>=3.3.2)", "mne", "numba (>=0.53,<0.59) ; python_version < \"3.12\"", "pmdarima (>=1.8,!=1.8.1,<3.0.0) ; python_version < \"3.12\"", "prophet (>=1.1) ; python_version < \"3.12\"", "pycatch22 (<0.4.4)", "pykalman-bardo (>=0.9.7,<0.10)", "pyod (>=0.8) ; python_version < \"3.11\"", "scikit-posthocs (>=0.6.5)", "seaborn (>=0.11)", "seasonal", "skpro (>=2,<2.2.0)", "statsforecast (>=0.5.2,<1.7.0) ; python_version < \"3.12\"", "statsmodels (>=0.12.1)", "stumpy (>=1.5.1) ; python_version < \"3.11\"", "tbats (>=1.1) ; python_version < \"3.12\"", "tensorflow ; python_version < \"3.12\"", "tsfresh (>=0.17) ; python_version < \"3.12\"", "tslearn (>=0.5.2,<0.6.0) ; python_version < \"3.11\"", "xarray"]
-annotation = ["hmmlearn (>=0.2.7,<0.4)", "numba (>=0.53,<0.59) ; python_version < \"3.12\"", "pyod (>=0.8,<1.2) ; python_version < \"3.12\""]
-binder = ["jupyter", "pandas (<2.0.0)"]
-classification = ["esig (>=0.9.7,<0.10) ; python_version < \"3.11\"", "numba (>=0.53,<0.59) ; python_version < \"3.12\"", "tensorflow (>=2,<=2.14) ; python_version < \"3.12\"", "tsfresh (>=0.17,<0.21) ; python_version < \"3.12\""]
-clustering = ["numba (>=0.53,<0.59) ; python_version < \"3.12\"", "tslearn (>=0.5.2,<0.6.3) ; python_version < \"3.12\""]
-cython-extras = ["mrseql", "mrsqm ; python_version < \"3.11\"", "numba (<0.59)"]
-dev = ["backoff", "httpx", "pre-commit", "pytest", "pytest-cov", "pytest-randomly", "pytest-timeout", "pytest-xdist", "wheel"]
-dl = ["tensorflow (>=2,<=2.14) ; python_version < \"3.12\"", "torch ; python_version < \"3.12\""]
-docs = ["Sphinx (!=7.2.0,<8.0.0)", "jupyter", "myst-parser", "nbsphinx (>=0.8.6)", "numpydoc", "pydata-sphinx-theme", "sphinx-copybutton", "sphinx-design (<0.6.0)", "sphinx-gallery (<0.16.0)", "sphinx-issues (<4.0.0)", "tabulate"]
-forecasting = ["arch (>=5.6,<6.3)", "pmdarima (>=1.8,!=1.8.1,<2.1) ; python_version < \"3.12\"", "prophet (>=1.1,<1.2)", "skpro (>=2,<2.2)", "statsforecast (>=0.5.2,<1.7) ; python_version < \"3.12\"", "statsmodels (>=0.12.1,<0.15)", "tbats (>=1.1,<1.2) ; python_version < \"3.12\""]
-mlflow = ["mlflow"]
-mlflow-tests = ["boto3", "botocore", "mlflow", "moto"]
-networks = ["keras-self-attention (>=0.51,<0.52)", "tensorflow (>=2,<=2.14) ; python_version < \"3.12\""]
+alignment = ["dtaidistance (<2.4) ; python_version < \"3.13\"", "dtw-python (>=1.3,<1.6) ; python_version < \"3.13\"", "numba (>=0.53,<0.63) ; python_version < \"3.14\""]
+all-extras = ["arch (>=5.6,<7.3.0) ; python_version < \"3.13\"", "autots (>=0.6.1,<0.7)", "cloudpickle ; python_version < \"3.13\"", "dash (!=2.9.0) ; python_version < \"3.13\"", "dask (>2024.8.2,<2025.2.1) ; python_version < \"3.13\"", "dtw-python ; python_version < \"3.13\"", "gluonts (>=0.9) ; python_version < \"3.13\"", "h5py ; python_version < \"3.12\"", "hmmlearn (>=0.2.7) ; python_version < \"3.11\"", "holidays ; python_version < \"3.13\"", "matplotlib (>=3.3.2,!=3.9.1) ; python_version < \"3.13\"", "numba (>=0.53,<0.63) ; python_version < \"3.14\"", "optuna (<4.5)", "pmdarima (>=1.8,!=1.8.1,<3.0.0)", "polars[pandas] (>=0.20,<2.0) ; python_version < \"3.13\"", "prophet (>=1.1) ; python_version < \"3.12\"", "pycatch22 (<0.4.6) ; python_version < \"3.13\"", "pyod (>=0.8) ; python_version < \"3.11\"", "pyts (<0.14.0) ; python_version < \"3.12\"", "ray (>=2.40.0) ; python_version < \"3.13\"", "scikit-optimize ; python_version < \"3.13\"", "scikit_posthocs (>=0.6.5) ; python_version < \"3.13\"", "seaborn (>=0.11) ; python_version < \"3.13\"", "simdkalman", "skforecast (>=0.12.1,<0.19) ; python_version < \"3.14\"", "skpro (>=2,<2.11.0)", "statsforecast (>=1.0.0,<2.1.0) ; python_version < \"3.13\"", "statsmodels (>=0.12.1) ; python_version < \"3.13\"", "tensorflow (>=2.15,<2.20) ; python_version < \"3.13\"", "tsfresh (>=0.17) ; python_version < \"3.12\"", "tslearn (>=0.5.2,!=0.6.0,<0.7.0) ; python_version < \"3.11\"", "xarray ; python_version < \"3.13\""]
+all-extras-pandas2 = ["arch (>=5.6,<7.1.0) ; python_version < \"3.13\"", "autots (>=0.6.1,<0.7) ; python_version < \"3.13\"", "cloudpickle ; python_version < \"3.13\"", "dash (!=2.9.0) ; python_version < \"3.13\"", "dask (>2024.8.2,<2025.2.1) ; python_version < \"3.13\"", "dtw-python ; python_version < \"3.13\"", "gluonts (>=0.9) ; python_version < \"3.13\"", "h5py ; python_version < \"3.12\"", "hmmlearn (>=0.2.7) ; python_version < \"3.11\"", "holidays ; python_version < \"3.13\"", "matplotlib (>=3.3.2,!=3.9.1) ; python_version < \"3.13\"", "numba (>=0.53,<0.63) ; python_version < \"3.14\"", "optuna (<4.5)", "pmdarima (>=1.8,!=1.8.1,<3.0.0)", "polars[pandas] (>=0.20,<2.0) ; python_version < \"3.13\"", "prophet (>=1.1) ; python_version < \"3.12\"", "pycatch22 (<0.4.6) ; python_version < \"3.13\"", "pyod (>=0.8) ; python_version < \"3.11\"", "ray (>=2.40.0) ; python_version < \"3.13\"", "scikit_posthocs (>=0.6.5) ; python_version < \"3.13\"", "seaborn (>=0.11) ; python_version < \"3.13\"", "simdkalman", "skforecast (>=0.12.1,<0.19) ; python_version < \"3.14\"", "skpro (>=2,<2.11.0)", "statsforecast (>=1.0.0,<2.1.0) ; python_version < \"3.13\"", "statsmodels (>=0.12.1) ; python_version < \"3.13\"", "tensorflow (>=2.15,<2.20) ; python_version < \"3.13\"", "tsfresh (>=0.17) ; python_version < \"3.12\"", "tslearn (>=0.5.2,!=0.6.0,<0.7.0) ; python_version < \"3.11\"", "xarray ; python_version < \"3.13\""]
+annotation = ["hmmlearn (>=0.2.7,<0.4) ; python_version < \"3.13\"", "numba (>=0.53,<0.63) ; python_version < \"3.14\"", "pyod (>=0.8,<1.2) ; python_version < \"3.12\""]
+binder = ["jupyter", "skchange"]
+classification = ["numba (>=0.53,<0.63) ; python_version < \"3.14\"", "tensorflow (>=2.15,<2.20) ; python_version < \"3.13\"", "tsfresh (>=0.17,<0.21) ; python_version < \"3.12\""]
+clustering = ["networkx (<3.5)", "numba (>=0.53,<0.63) ; python_version < \"3.14\"", "ts2vg (<1.3) ; python_version < \"3.13\" and platform_machine != \"aarch64\"", "tslearn (>=0.5.2,!=0.6.0,<0.7.0) ; python_version < \"3.12\""]
+compatibility-tests = ["catboost ; python_version < \"3.13\""]
+cython-extras = ["mrseql (<0.0.3)", "mrsqm ; python_version < \"3.11\"", "numba (<0.63) ; python_version < \"3.14\""]
+dataframe = ["dask (>2024.8.2,<2025.2.1) ; python_version < \"3.13\"", "dask (>2024.8.2,<2025.2.1) ; python_version < \"3.13\""]
+datasets = ["huggingface-hub", "rdata", "requests"]
+dependencies-lower = ["numpy (==1.25.0)", "pandas (==2.0.2)", "scikit-learn (==1.3.0)", "scipy (==1.10.1)"]
+dependencies-lowest = ["numpy (==1.21.0)", "pandas (==1.1.0)", "scikit-learn (==0.24.0)", "scipy (==1.4.0)"]
+detection = ["hmmlearn (>=0.2.7,<0.4) ; python_version < \"3.13\"", "numba (>=0.53,<0.63) ; python_version < \"3.14\"", "pyod (>=0.8,<1.2) ; python_version < \"3.12\""]
+dev = ["backoff", "httpx", "pre-commit", "pytest", "pytest-randomly", "pytest-timeout", "pytest-xdist", "wheel"]
+dl = ["accelerate", "einops (>0.7.0) ; python_version < \"3.12\"", "gluonts (>=0.14.3) ; python_version < \"3.12\"", "huggingface-hub (>=0.23.0) ; python_version < \"3.12\"", "hydra-core ; python_version < \"3.13\"", "lightning (>=2.0) ; python_version < \"3.12\"", "neuralforecast (>=1.6.4,<1.8.0) ; python_version < \"3.11\"", "peft (>=0.10.0,<0.14.0) ; python_version < \"3.12\"", "pytorch-forecasting (>=1.0.0,<1.6.0) ; (sys_platform != \"darwin\" or python_version != \"3.13\") and python_version < \"3.14\"", "tensorflow (>=2.15,<2.20) ; python_version < \"3.13\"", "torch ; sys_platform != \"darwin\" or python_version < \"3.13\"", "tqdm", "transformers[torch] (<4.41.0) ; python_version < \"3.13\""]
+docs = ["Sphinx (!=7.2.0,<9.0.0)", "jupyter", "myst-parser", "nbsphinx (>=0.8.6)", "numpydoc", "pydata-sphinx-theme", "sphinx-copybutton", "sphinx-design (<0.7.0)", "sphinx-gallery (<0.20.0)", "sphinx-issues (<6.0.0)", "tabulate"]
+forecasting = ["arch (>=5.6,<7.1) ; python_version < \"3.13\"", "autots (>=0.6.1,<0.7) ; python_version < \"3.13\"", "pmdarima (>=1.8,!=1.8.1,<2.2)", "prophet (>=1.1,<1.2) ; python_version < \"3.13\"", "skforecast (>=0.12.1,<0.19) ; python_version < \"3.14\"", "skpro (>=2,<2.11.0)", "statsforecast (>=1.0.0,<2.1.0) ; python_version < \"3.13\"", "statsmodels (>=0.12.1,<0.15) ; python_version < \"3.13\""]
+mlflow = ["mlflow (<4.0)"]
+mlflow-tests = ["boto3", "botocore", "mlflow (<4.0)", "moto"]
+mlflow2 = ["mlflow (<3.0)"]
+networks = ["tensorflow (>=2.15,<2.20) ; python_version < \"3.13\""]
+notebooks = ["dtw-python", "matplotlib", "numpy (<2)", "pmdarima", "prophet", "pytorch-forecasting", "scipy (<1.16)", "seaborn", "skpro", "statsforecast", "tbats"]
+numpy1 = ["numpy (<2.0.0)"]
 pandas1 = ["pandas (<2.0.0)"]
-param-est = ["seasonal (>=0.3.1,<0.4)", "statsmodels (>=0.12.1,<0.15)"]
-regression = ["numba (>=0.53,<0.59) ; python_version < \"3.12\"", "tensorflow (>=2,<=2.14) ; python_version < \"3.12\""]
-tests = ["pytest (>=7.4,<7.5)", "pytest-cov (>=4.1,<4.2)", "pytest-randomly (>=3.15,<3.16)", "pytest-timeout (>=2.1,<2.3)", "pytest-xdist (>=3.3,<3.6)"]
-transformations = ["esig (>=0.9.7,<0.10) ; python_version < \"3.11\"", "filterpy (>=1.4.5,<1.5)", "holidays (>=0.29,<0.40)", "mne (>=1.5,<1.6)", "numba (>=0.53,<0.59) ; python_version < \"3.12\"", "pycatch22 (>=0.4,<0.4.5)", "pykalman-bardo (>=0.9.7,<0.10)", "statsmodels (>=0.12.1,<0.15)", "stumpy (>=1.5.1,<1.13) ; python_version < \"3.12\"", "tsfresh (>=0.17,<0.21) ; python_version < \"3.12\""]
+param-est = ["seasonal (>=0.3.1,<0.4) ; python_version < \"3.13\"", "statsmodels (>=0.12.1,<0.15) ; python_version < \"3.13\""]
+regression = ["numba (>=0.53,<0.63) ; python_version < \"3.14\"", "tensorflow (>=2.15,<2.20) ; python_version < \"3.13\""]
+tests = ["pytest (>=7.4,<9.1)", "pytest-randomly (>=3.15,<4.1)", "pytest-timeout (>=2.1,<2.5)", "pytest-xdist (>=3.3,<3.9)"]
+transformations = ["holidays (>=0.29,<0.59) ; python_version < \"3.13\"", "numba (>=0.53,<0.63) ; python_version < \"3.14\"", "pycatch22 (>=0.4,<0.4.6) ; python_version < \"3.13\"", "simdkalman", "statsmodels (>=0.12.1,<0.15) ; python_version < \"3.13\"", "tsfresh (>=0.17,<0.21) ; python_version < \"3.12\""]
 
 [[package]]
 name = "smmap"
@@ -9385,5 +9417,5 @@ type = ["pytest-mypy"]
 
 [metadata]
 lock-version = "2.1"
-python-versions = ">=3.11,<3.13"
-content-hash = "454369c183692cd7d5c7055453b31997b6702bfd77343e06881e57d45766aab0"
+python-versions = ">=3.11,<3.14"
+content-hash = "f75588ffb8230a63cce898de05091eb21a032b86eb850be648490c36185b2e32"
