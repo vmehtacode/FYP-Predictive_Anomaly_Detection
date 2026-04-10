@@ -62,7 +62,7 @@ def forecasting_metrics(
     y_train: np.ndarray | None = None,
     quantiles: dict[float, np.ndarray] | None = None,
 ) -> dict[str, float]:
-    """Calculate comprehensive forecasting metrics."""
+    """Calculate all standard forecasting metrics."""
     metrics = {
         "mae": mean_absolute_error(y_true, y_pred),
         "rmse": root_mean_squared_error(y_true, y_pred),
@@ -166,7 +166,7 @@ def anomaly_metrics(
     true_anomaly_starts: list[int] | None = None,
     predicted_anomaly_times: list[int] | None = None,
 ) -> dict[str, float]:
-    """Calculate comprehensive anomaly detection metrics."""
+    """Calculate all anomaly detection metrics."""
     metrics = precision_recall_f1(y_true, y_scores, threshold)
 
     # Add latency metrics if available

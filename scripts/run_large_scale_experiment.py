@@ -2,7 +2,7 @@
 """
 Large-scale experiment to evaluate self-play effectiveness with statistical rigor.
 
-This script runs comprehensive experiments comparing self-play against multiple baselines
+This script runs experiments comparing self-play against multiple baselines
 on the LCL dataset with proper statistical validation.
 """
 

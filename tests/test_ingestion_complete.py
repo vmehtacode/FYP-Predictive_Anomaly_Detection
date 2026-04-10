@@ -1,5 +1,5 @@
 """
-Comprehensive tests to validate complete ingestion.
+Tests to validate complete ingestion.
 Run after ingestion to ensure everything is correct.
 
 Usage:

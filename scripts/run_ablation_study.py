@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Run ablation study for hybrid verifier component analysis.
 
-This script runs a comprehensive ablation study quantifying each
+This script runs an ablation study quantifying each
 component's contribution to the hybrid verifier ensemble, including
 weight sweep, early-exit trade-off, per-anomaly-type breakdown,
 physics compliance measurement, and statistical significance testing.

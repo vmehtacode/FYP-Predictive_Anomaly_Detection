@@ -1,330 +1,130 @@
-# AZR-inspired Energy Forecasting & Anomaly Detection
+# Grid Guardian
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+Topology-aware anomaly detection for UK electricity distribution networks using Graph Attention Networks and self-play verification.
 
-A machine learning system that adapts the propose→solve→verify self-play paradigm from **Absolute Zero Reasoner (AZR)** ([arXiv:2505.03335](https://arxiv.org/abs/2505.03335)) to time series forecasting and anomaly detection in energy consumption data.
+## Overview
 
-## Project Vision
+This is a final-year BSc Computer Science project at Aston University. The goal is to detect anomalies in electricity distribution networks by combining graph neural networks with physics-based constraint verification.
 
-This Final Year Project explores how self-play reinforcement learning can enhance time series forecasting by training models to propose challenging scenarios, solve them accurately, and verify solutions through realistic constraints. We focus on household energy consumption prediction with validation against real distribution network feeders.
+The core idea is a three-layer hybrid verifier. The first layer checks forecasts against known physics constraints (voltage limits, capacity bounds, ramp rates) drawn from UK electrical standards (BS EN 50160, BS 7671). The second layer is a Graph Attention Network (GATv2Conv) trained on synthetic anomaly data that learns to spot patterns across connected nodes in the grid topology. The third layer checks whether anomalies propagate through neighbors in a way that suggests a real cascade event rather than an isolated reading error.
 
-**Key Innovation**: Unlike traditional supervised learning on historical data, our approach generates synthetic scenarios that stress-test model capabilities while maintaining physical plausibility through verifiable reward signals.
+The project also includes a self-play training framework where a proposer agent generates challenging energy consumption scenarios, a solver agent forecasts under those conditions, and a verifier agent checks the results. This was inspired by the propose-solve-verify paradigm from the Absolute Zero Reasoner paper. In practice, the self-play loop did not outperform simple baselines on periodic time-series data -- this negative result is documented and led to the pivot towards the GNN-based verification approach, which is the main contribution.
 
-## Data Flow Architecture
+All evaluation is on synthetic anomaly data generated to match SSEN grid characteristics. There are no ground-truth anomaly labels in the real datasets, so the results should be read as proof-of-concept rather than production validation.
 
-```mermaid
-graph TB
-    subgraph "Raw Data Sources"
-        A[UK-DALE<br/>Household Energy]
-        B[London Smart Meters<br/>LCL Dataset]
-        C[SSEN LV Feeder<br/>Distribution Network]
-    end
+## Architecture
 
-    subgraph "Processing Pipeline"
-        D[Data Harmonization<br/>30-min resolution]
-        E[Feature Engineering<br/>Weather, Calendar, Lags]
-    end
+The pipeline has four stages:
 
-    subgraph "Self-Play Training"
-        F[Proposer<br/>Scenario Generation]
-        G[Solver<br/>TS Forecasting Model]
-        H[Verifier<br/>Constraint Validation]
-    end
+**Data ingestion** -- Three UK energy datasets are processed into a common schema (30-min resolution Parquet files). Each dataset has its own ingestor class (`LCLIngestor`, `UKDALEIngestor`, `SSENIngestor`) inheriting from `BaseIngestor`. The SSEN metadata is used to build the grid graph.
 
-    subgraph "Validation & Evaluation"
-        I[Pseudo-Feeder<br/>Aggregation]
-        J[Distributional<br/>Comparison]
-        K[Anomaly Case<br/>Studies]
-    end
+**Graph construction** -- `GridGraphBuilder` transforms SSEN feeder/substation metadata into PyTorch Geometric `Data` objects. The graph has three node types: primary substations (type 0), secondary substations (type 1), and LV feeders (type 2). Edges are bidirectional and represent physical connectivity.
 
-    A --> D
-    B --> D
-    D --> E
-    E --> F
-    F --> G
-    G --> H
-    H --> F
-    E --> I
-    C --> J
-    I --> J
-    J --> K
-```
+**GNN verification** -- `GATVerifier` is a 3-layer GATv2Conv model with 4 attention heads and 64 hidden channels. It uses a 1D-Conv temporal encoder (`TemporalEncoder`) per node, learnable node-type embeddings, and GCNII-style initial residual connections to prevent oversmoothing. Trained on `SyntheticAnomalyDataset` which generates labeled graph data with five anomaly types: spike, dropout, cascade, ramp violation, and normal.
 
-## USP
+**Hybrid ensemble** -- `HybridVerifierAgent` combines the three verification layers with configurable weights. Physics-only nodes can early-exit before GNN inference. The `CascadeLogicLayer` scores nodes based on how many of their neighbors are also flagged, distinguishing propagation events from isolated spikes. All thresholds are loaded from YAML config, not hardcoded.
 
-- **Real-World Grid Validation**: Actual SSEN distribution network data (100K consumption readings from operational feeders)
-- **Latest Architectures**: PatchTST and N-BEATS variants with uncertainty quantification
-- **Verifiable Rewards**: Physics-based constraints ensure realistic scenario generation
-- **Multi-Scale Validation**: Household-level accuracy with distribution-feeder-level realism checks
-- **Production MLOps**: DVC data versioning, MLflow experiment tracking, comprehensive CI/CD
-- **Uncertainty Quantification**: Quantile regression heads and Monte Carlo dropout
-- **Open Science**: Reproducible experiments with clear data governance
+## Key Results
 
-## Project Status
+GATVerifier performance on held-out synthetic test data (500 graphs, 44 nodes each, seed=9999):
 
-**Current Phase**: Data Ingestion & Exploration
-**Next Milestone**: Self-Play Prototype Implementation
+| Metric | Value |
+|--------|-------|
+| Accuracy | 98.3% |
+| Precision | 93.8% |
+| Recall | 95.5% |
+| F1 | 0.946 |
+| Test nodes | 22,000 |
 
-<table>
-<tr><th>Completed</th><th>In Progress</th><th>Upcoming</th></tr>
-<tr>
-<td>
+Ablation study on hybrid verifier components (200 samples, seed=42):
 
-- Data infrastructure (DVC)
-- Datasets acquired (15.2GB)
-- Ingestion pipeline built
-- Baseline models implemented
-- Testing framework
+| Configuration | ROC-AUC | Optimal F1 |
+|---------------|---------|------------|
+| Baseline (VerifierAgent) | 0.50 | 0.00 |
+| Physics only | 0.50 | 0.00 |
+| GNN only | 1.00 | 1.00 |
+| Cascade only | 0.90 | 0.89 |
+| Full hybrid | 1.00 | 1.00 |
 
-</td>
-<td>
+The GNN layer is the primary driver of detection performance. The cascade layer adds value for propagation-type anomalies. Physics constraints provide a useful first filter but don't discriminate well on their own in this synthetic setup.
 
-- Full dataset ingestion
-- Exploratory analysis
-- Anomaly strategy defined
-- SSEN constraint extraction
+These numbers are on synthetic data designed to match grid characteristics. Real-world performance would likely be lower, and the system has not been validated against labeled real anomalies.
 
-</td>
-<td>
-
-- Self-play architecture
-- Proposer/Verifier agents
-- Model training
-- Evaluation & writing
-
-</td>
-</tr>
-</table>
-
-### Datasets Overview
-
-| Dataset | Size | Records | Households/Feeders | Purpose |
-|---------|------|---------|------------|---------|
-| **LCL** (London Smart Meters) | 8.54 GB | ~167M readings | 5,567 households | Training & validation |
-| **UK-DALE** | 6.33 GB | ~114M readings | 5 houses | Appliance-level analysis |
-| **SSEN** (LV Feeder Data) | 37 MB | 100K metadata + 100K consumption | 100K feeders (28 with time-series) | **Real-world validation** |
-| **Total** | **~15 GB** | **~281M readings** | **5,572+ entities** | — |
-
-All datasets tracked with DVC. SSEN provides actual operational grid data for validating pseudo-feeder realism. See `data/README_raw.md` for access instructions.
-
-## Quick Start
-
-### Prerequisites
-- Python 3.11+
-- [Poetry](https://python-poetry.org/) for dependency management
-- Git with LFS support
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/vatsalmehta/FYP-Predictive_Anomaly_Detection.git
-cd FYP-Predictive_Anomaly_Detection
-
-# Install dependencies
-poetry install
-
-# Activate virtual environment
-poetry shell
-
-# Install pre-commit hooks
-pre-commit install
-
-# Pull data if remote configured (optional)
-# dvc pull
-
-# Run smoke tests
-pytest tests/
-
-# Verify pipeline (placeholder stages)
-dvc repro
-```
-
-### Data Onboarding
-
-This project uses **DVC (Data Version Control)** to manage large datasets while keeping Git repositories lightweight.
-
-#### For Quick Testing/CI
-```bash
-# Use built-in synthetic samples (already available)
-ls data/samples/
-# → lcl_sample.csv, ukdale_sample.csv, ssen_sample.csv
-```
-
-#### For Full Development
-```bash
-# 1. Download datasets (see docs/download_links.md for sources)
-#    Place in: data/raw/ukdale/, data/raw/lcl/, data/raw/ssen/
-
-# 2. Track with DVC
-dvc add data/raw/ukdale
-dvc add data/raw/lcl
-dvc add data/raw/ssen
-
-# 3. Commit pointers (not data!) to Git
-git add data/raw/*.dvc dvc.lock
-git commit -m "DVC: track raw datasets via pointers"
-
-# 4. Optional: Set up remote storage for team sharing
-dvc remote add -d myremote s3://my-bucket/fyp-data/
-dvc push
-```
-
-**Dataset Locations:**
-- `data/raw/ukdale/` → UK-DALE household consumption
-- `data/raw/lcl/` → London Smart Meters data
-- `data/raw/ssen/` → SSEN distribution feeder data
-- `data/samples/` → Tiny synthetic samples for demos/CI
-
-**Resources:**
-- [Dataset download links & setup](docs/download_links.md)
-- [Complete DVC workflow guide](data/README_raw.md)
-- [Ingestion specifications](docs/ingestion_specs.md)
-- [Baseline models documentation](docs/baselines.md)
-
-#### Data Ingestion
-
-```bash
-# Quick test with samples (no downloads needed)
-python -m fyp.ingestion.cli lcl --use-samples
-python -m fyp.ingestion.cli ukdale --use-samples
-python -m fyp.ingestion.cli ssen --use-samples
-
-# Full ingestion (requires raw data)
-python -m fyp.ingestion.cli lcl
-python -m fyp.ingestion.cli ukdale --downsample-30min
-python -m fyp.ingestion.cli ssen  # Uses CKAN API
-```
-
-#### Baseline Models
-
-```bash
-# Quick forecasting baselines on samples
-python -m fyp.runner forecast --dataset lcl --use-samples
-
-# Anomaly detection baselines
-python -m fyp.runner anomaly --dataset ukdale --use-samples
-
-# Full evaluation with custom horizon
-python -m fyp.runner forecast --dataset ssen --horizon 96
-
-# Modern neural models with uncertainty quantification
-python -m fyp.runner forecast --dataset lcl --model-type patchtst --use-samples
-python -m fyp.runner anomaly --dataset ukdale --model-type autoencoder --use-samples
-
-# Note: Use canonical import path fyp.anomaly.autoencoder
-# (old path fyp.models.autoencoder still works but deprecated)
-```
-
-### Running Locally
-
-```bash
-# Check code quality
-pre-commit run --all-files
-
-# Run full test suite
-pytest tests/ -v
-
-# Check pipeline status
-dvc status
-
-# View experiment tracking (when available)
-mlflow ui
-```
+The test suite has 349 test functions covering ingestion, models, self-play, GNN components, and the hybrid verifier.
 
 ## Project Structure
 
 ```
-├── .github/           # GitHub workflows and issue templates
-├── docs/              # Comprehensive documentation
-├── notebooks/         # Jupyter notebooks for exploration
-├── src/fyp/          # Main package source code
-├── tests/            # Test suite
-├── data/             # Data directories (DVC tracked)
-│   ├── raw/          # Original datasets (gitignored)
-│   ├── processed/    # Cleaned and transformed data
-│   └── derived/      # Model outputs and artifacts
-└── dvc.yaml          # DVC pipeline definition
+src/fyp/
+  ingestion/       Data loading for LCL, UK-DALE, SSEN datasets
+  gnn/             GATVerifier model, graph builder, synthetic dataset, trainer
+  selfplay/        Proposer, Solver, Verifier agents and training loop
+  models/          PatchTST, ensemble forecaster, autoencoder
+  evaluation/      Ablation study and benchmark framework
+  baselines/       Simple forecasting and anomaly detection baselines
+  config.py        Pydantic config models for experiments
+  metrics.py       Forecasting and anomaly detection metrics
+  runner.py        CLI entry point for running baselines
+
+tests/             349 tests (unit, integration, smoke)
+notebooks/         Jupyter notebooks for data exploration (LCL, UK-DALE, SSEN)
+scripts/           Training scripts, evaluation runners, experiment drivers
+examples/          Demo scripts for self-play and BDH enhancements
+configs/           YAML configuration files
+data/              DVC-tracked datasets (raw, processed, derived)
+app.py             Streamlit dashboard for interactive exploration
+docs/              Design docs, dataset notes, experiment specs
 ```
 
-## Known Issues & Limitations
+## Setup and Running
 
-### Data Limitations
-1. **No Ground-Truth Anomaly Labels**: Datasets lack labeled anomalies. We address this through:
-   - Physics-based constraints from SSEN
-   - Self-play learning without labels
-   - Synthetic test set for quantitative evaluation
+Requires Python 3.11+ and [Poetry](https://python-poetry.org/).
 
-2. **SSEN Time-Series Data**: Currently have feeder metadata only. Time-series consumption requires:
-   - Research partnership agreement, OR
-   - API access (pending), OR
-   - Pseudo-feeder generation from LCL aggregations (our approach)
+```bash
+# Install dependencies
+poetry install
 
-### Technical Constraints
-3. **Large Dataset Processing**: LCL CSV (8.5GB) requires:
-   - Chunked reading for memory efficiency
-   - Parquet conversion for fast queries
-   - Current implementation tested on 16GB+ RAM
+# Activate the environment
+poetry shell
 
-4. **HDF5 Dependencies**: UK-DALE requires `h5py` library and proper HDF5 handling
+# Run the test suite
+pytest tests/
 
-### Scope Decisions
-5. **Focus on Novelty Over SOTA**: This project prioritizes:
-   - Novel self-play approach to unsupervised anomaly detection
-   - Physics-informed verification using real network constraints
-   - Demonstrating feasibility of label-free learning
-   - **NOT** achieving state-of-the-art forecasting accuracy
+# Run the Streamlit dashboard
+streamlit run app.py
 
-These are documented features, not bugs. See `docs/anomaly_strategy.md` for our approach.
+# Run forecasting baselines on sample data
+python -m fyp.runner forecast --dataset lcl --use-samples
 
-## Ethics & Privacy
+# Run anomaly detection baselines
+python -m fyp.runner anomaly --dataset ukdale --use-samples
 
-- **No PII Joins**: Personal identifiable information is never linked across datasets
-- **SSEN Validation Only**: Distribution network data used solely for external validation
-- **Anonymized Analysis**: All household-level analysis maintains user anonymity
-- **Data Minimization**: Only essential features extracted for modeling purposes
-- **Transparent Methods**: All processing steps documented and reproducible
+# Ingest data (sample mode, no downloads needed)
+python -m fyp.ingestion.cli lcl --use-samples
+python -m fyp.ingestion.cli ukdale --use-samples
+python -m fyp.ingestion.cli ssen --use-samples
+```
 
-## Documentation
+## Datasets
 
-- [**Datasets**](docs/datasets.md): UK-DALE, London Smart Meters, and SSEN LV Feeder details
-- [**Data Governance**](docs/data_governance.md): DVC setup, provenance, and retention policies
-- [**Self-Play Design**](docs/selfplay_design.md): Propose→solve→verify architecture for time series
-- [**Experiments**](docs/experiments.md): MLflow organization and naming conventions
-- [**Feeder Evaluation**](docs/feeder_eval.md): Validation methodology against real networks
+| Dataset | Size | Records | Entities | Role |
+|---------|------|---------|----------|------|
+| London Smart Meters (LCL) | 8.5 GB | ~167M readings | 5,567 households | Training and validation |
+| UK-DALE | 6.3 GB | ~114M readings | 5 houses | Appliance-level analysis |
+| SSEN LV Feeder | 37 MB | 100K metadata records | 100K feeders (28 with time-series) | Grid topology and validation |
 
-## Contributing
+All large files are tracked with DVC. Small synthetic samples are included in `data/samples/` for testing without downloading the full datasets. See `docs/download_links.md` for access instructions.
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
-- Development workflow and branch management
-- Code style and testing requirements
-- Experiment tracking best practices
+The SSEN dataset provides real distribution network topology (primary substations, secondary substations, LV feeders) used to build the graph structure. The LCL and UK-DALE datasets provide household consumption patterns used for the self-play training loop and baseline evaluation.
 
-Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
+## References
+
+1. Zhao et al. (2025). "Absolute Zero: Reinforced Self-Play Reasoning with Zero Data." arXiv:2505.03335. -- The propose-solve-verify self-play paradigm adapted for energy forecasting.
+2. Brody, Alon, and Yahav (2022). "How Attentive are Graph Attention Networks?" ICLR 2022. -- GATv2Conv, which fixes the static attention problem in the original GAT.
+3. Chen et al. (2020). "Simple and Deep Graph Convolutional Networks." ICML 2020. -- GCNII initial residual connections used to prevent oversmoothing.
+4. Nie et al. (2023). "A Time Series is Worth 64 Words: Long-term Forecasting with Transformers." ICLR 2023. -- PatchTST architecture used in the forecasting baselines.
+5. Kosowski et al. (2025). "The Dragon Hatchling: The Missing Link between the Transformer and Models of the Brain." arXiv:2509.26507. -- BDH-inspired Hebbian constraint adaptation and graph-based scenario relationships.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Citation
-
-If you use this work in your research, please cite:
-
-```bibtex
-@software{fyp_energy_forecasting,
-  title = {AZR-inspired Energy Forecasting & Anomaly Detection},
-  author = {Your Name},
-  year = {2025},
-  url = {https://github.com/vatsalmehta2001/FYP-Predictive_Anomaly_Detection}
-}
-```
-
-See [CITATION.cff](CITATION.cff) for complete citation metadata.
-
-## Related Work
-
-- [Absolute Zero Reasoner (AZR)](https://arxiv.org/abs/2505.03335) - Propose→solve→verify paradigm we adapt
-- [PatchTST](https://arxiv.org/abs/2211.14730) - Patch-based transformer for time series
-- [N-BEATS](https://arxiv.org/abs/1905.10437) - Neural basis expansion analysis for forecasting
-- [UK-DALE](https://arxiv.org/abs/1404.0284) - UK Domestic Appliance-Level Electricity dataset
+MIT License. See [LICENSE](LICENSE) for details.

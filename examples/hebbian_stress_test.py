@@ -283,7 +283,7 @@ def plot_results(
     hebbian_verifier: HebbianVerifier,
     results: dict,
 ) -> None:
-    """Create comprehensive 6-panel visualization."""
+    """Create 6-panel visualization."""
     fig = plt.figure(figsize=(18, 10))
     gs = fig.add_gridspec(2, 3, hspace=0.3, wspace=0.3)
 

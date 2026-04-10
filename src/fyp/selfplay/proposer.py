@@ -1,8 +1,7 @@
 """Proposer agent for generating challenging energy consumption scenarios.
 
 This module implements the scenario generation component of the self-play system,
-creating physically-plausible but challenging scenarios for training robust
-forecasting models.
+creating realistic but challenging scenarios for training forecasting models.
 """
 
 import json
@@ -240,7 +239,7 @@ class ProposerAgent:
     ) -> ScenarioProposal:
         """Generate a new scenario conditioned on past successful scenarios.
 
-        Inspired by AZR's learnability reward:
+        Targets moderate difficulty using learnability reward:
         - Avoid trivial scenarios (solver success rate = 100%)
         - Avoid unsolvable scenarios (solver success rate = 0%)
         - Target moderate difficulty (solver success rate ~40-60%)
@@ -525,13 +524,8 @@ class ProposerAgent:
     ) -> float:
         """Compute proposer reward based on scenario learnability.
 
-        Following AZR Equation (4):
-        r_propose = {
-            0, if r_solve_avg = 0 (unsolvable)
-            1 - r_solve_avg, otherwise
-        }
-
-        Intuition: Reward scenarios that are challenging but solvable.
+        Reward scenarios that are challenging but solvable:
+        r_propose = 0 if unsolvable, else (1 - r_solve_avg).
 
         Args:
             scenario: Proposed scenario

@@ -7,7 +7,7 @@ This experiment tests 4 configurations:
 3. Graph only
 4. Full BDH (Hebbian + Graph)
 
-Goal: Show full BDH improves by >10% vs baseline, quantify synergy.
+Goal: Show full BDH improves by >10% vs baseline, measure component interactions.
 """
 import json
 import sys

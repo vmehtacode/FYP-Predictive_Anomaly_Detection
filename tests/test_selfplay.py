@@ -1,4 +1,4 @@
-"""Comprehensive unit tests for self-play training system."""
+"""Unit tests for self-play training system."""
 
 import json
 import os

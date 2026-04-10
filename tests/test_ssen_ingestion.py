@@ -1,7 +1,7 @@
 """Tests for SSEN time-series ingestion with metadata enrichment.
 
 This module tests the enhanced SSEN ingestor that processes real operational
-distribution network data with comprehensive metadata enrichment.
+distribution network data with metadata enrichment.
 """
 
 import json

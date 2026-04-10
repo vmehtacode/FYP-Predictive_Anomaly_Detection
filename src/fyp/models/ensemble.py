@@ -4,7 +4,7 @@ This module implements ensemble strategies that combine the strengths of:
 1. Neural models (PatchTST, FrequencyEnhancedPatchTST) - complex pattern learning
 2. Simple baselines (Moving Average, Naive) - exploit strong periodicity
 
-The goal is to beat simple baselines by leveraging their strengths as part of
+The goal is to beat simple baselines by using their strengths as part of
 the prediction, similar to residual learning where the neural model learns to
 correct baseline predictions.
 """
@@ -86,8 +86,8 @@ class EnsembleForecaster:
     - Moving Average baseline
     - Seasonal Naive baseline
     
-    This approach ensures we capture both learnable patterns (neural) and
-    exploit strong periodicity (baselines) that simple methods leverage.
+    This approach captures both learnable patterns (neural) and
+    uses strong periodicity (baselines) that simple methods already do well.
     """
     
     def __init__(

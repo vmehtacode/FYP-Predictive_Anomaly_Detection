@@ -1,8 +1,7 @@
-"""Self-play training orchestrator for energy forecasting.
+"""Self-play training loop for energy forecasting.
 
 This module implements the main training loop that coordinates the propose→solve→verify
-cycle, following the Absolute Zero Reasoning (AZR) approach adapted for time-series
-forecasting.
+cycle for time-series forecasting.
 """
 
 import json
@@ -51,7 +50,7 @@ def _safe_mean(values: list[float] | np.ndarray, default: float = 0.0) -> float:
 
 
 class SelfPlayTrainer:
-    """Orchestrates propose→solve→verify self-play training loop."""
+    """Runs the propose→solve→verify self-play training loop."""
 
     def __init__(
         self,
@@ -112,7 +111,7 @@ class SelfPlayTrainer:
     ) -> dict[str, Any]:
         """Single episode of propose→solve→verify training.
 
-        Following AZR algorithm:
+        Steps:
         1. PROPOSE: Generate scenario conditioned on buffer
         2. SOLVE: Forecast under proposed scenario
         3. VERIFY: Evaluate forecast plausibility
@@ -558,7 +557,7 @@ class SelfPlayTrainer:
         logger.info(f"Saved checkpoint to {checkpoint_path}")
 
     def _save_training_summary(self) -> None:
-        """Save comprehensive training summary."""
+        """Save training summary with all metrics."""
         summary_path = os.path.join(self.checkpoint_dir, "training_summary.json")
 
         # Aggregate metrics across all episodes

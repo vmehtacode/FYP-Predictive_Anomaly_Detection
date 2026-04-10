@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the implementation of the self-play reinforcement learning system for Grid Guardian, inspired by Absolute Zero Reasoning (AZR) and adapted for energy consumption forecasting.
+This document describes the implementation of the self-play reinforcement learning system for Grid Guardian, adapted for energy consumption forecasting.
 
 ## Architecture
 
@@ -410,7 +410,7 @@ print(json.dumps(details, indent=2))
 
 ## References
 
-1. Absolute Zero Reasoning (AZR) paper
+1. Self-play reinforcement learning literature
 2. UK electrical standards (BS 7671:2018)
 3. SSEN network constraints (G59/3)
 4. PatchTST architecture paper

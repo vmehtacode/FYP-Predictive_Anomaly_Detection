@@ -100,7 +100,7 @@ class TestStringOperations:
 
     def test_string_methods(self):
         """Test various string methods."""
-        text = "AZR-inspired Energy Forecasting"
-        assert text.lower().startswith("azr")
+        text = "Self-Play Energy Forecasting"
+        assert text.lower().startswith("self")
         assert "Energy" in text
         assert len(text.split()) == 3

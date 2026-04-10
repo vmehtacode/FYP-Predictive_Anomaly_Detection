@@ -2,7 +2,7 @@
 """Evaluate trained GATVerifier on held-out test set.
 
 This script loads a trained GATVerifier checkpoint and evaluates it on
-a held-out test set generated with a different seed, computing comprehensive
+a held-out test set generated with a different seed, computing
 metrics including accuracy, precision, recall, F1, and confusion matrix.
 
 Usage:
@@ -65,7 +65,7 @@ def evaluate_model(
     threshold: float = 0.5,
     device: str = "cpu",
 ) -> dict[str, Any]:
-    """Evaluate model on test data and compute comprehensive metrics.
+    """Evaluate model on test data and compute all metrics.
 
     Args:
         model: Trained GATVerifier model

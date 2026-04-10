@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 class VerifierBenchmark:
-    """Orchestrate multi-configuration evaluation on synthetic anomaly data.
+    """Run multi-configuration evaluation on synthetic anomaly data.
 
     All configurations are evaluated on the exact same test data (generated
     once with a fixed seed) to ensure fair comparison.  Metrics include

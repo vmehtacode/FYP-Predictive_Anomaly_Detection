@@ -7,7 +7,7 @@ to improve the self-play training dynamics without replacing the core architectu
 Key Concepts Applied:
     1. Hebbian-like constraint weight adaptation (synaptic plasticity)
     2. Sparse activation monitoring (interpretability)
-    3. Graph-based scenario relationships (modular network structure)
+    3. Graph-based scenario relationships (structured network)
 
 References:
     Kosowski et al. (2025). The Dragon Hatchling: The Missing Link between
@@ -264,7 +264,7 @@ class GraphBasedProposer:
     """
     Proposer with BDH-inspired graph-based scenario relationships.
 
-    BDH Concept: Neuron interactions form a modular graph with high clustering
+    BDH Concept: Neuron interactions form a structured graph with high clustering
     coefficient and heavy-tailed degree distribution.
 
     Application: Scenarios aren't independent - they have causal/temporal

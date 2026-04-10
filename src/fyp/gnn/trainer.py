@@ -9,7 +9,7 @@ The training pipeline supports:
 - Adam optimizer with configurable learning rate and weight decay
 - Early stopping based on validation loss
 - Model checkpointing for reproducibility
-- Comprehensive metrics tracking (loss, accuracy, precision, recall, F1)
+- Full metrics tracking (loss, accuracy, precision, recall, F1)
 """
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ class GNNTrainer:
     - Adam optimizer with configurable hyperparameters
     - Validation with early stopping
     - Model checkpointing
-    - Comprehensive metrics tracking
+    - Full metrics tracking
 
     Example:
         >>> from fyp.gnn import GATVerifier, SyntheticAnomalyDataset, GNNTrainer

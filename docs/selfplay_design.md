@@ -4,11 +4,11 @@ This document outlines the implementation-agnostic design of the propose→solve
 
 ## Overview
 
-Traditional supervised learning for time series forecasting relies on historical patterns, but struggles with novel scenarios and distribution shifts. Our self-play approach, inspired by AlphaZero Research (AZR), enables models to generate challenging but realistic scenarios, solve them accurately, and verify solutions through physics-based constraints.
+Traditional supervised learning for time series forecasting relies on historical patterns, but struggles with novel scenarios and distribution shifts. Our self-play approach enables models to generate challenging but realistic scenarios, solve them accurately, and verify solutions through physics-based constraints.
 
 ### Core Philosophy
 - **Proposer**: Generate diverse, challenging consumption scenarios
-- **Solver**: Develop robust forecasting capabilities across scenarios
+- **Solver**: Develop strong forecasting capabilities across scenarios
 - **Verifier**: Ensure physical plausibility and reward realistic solutions
 - **Self-Improvement**: Iterative refinement through verifiable feedback
 

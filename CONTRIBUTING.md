@@ -1,6 +1,6 @@
 # Contributing to FYP Energy Forecasting
 
-Thank you for your interest in contributing to the AZR-inspired Energy Forecasting & Anomaly Detection project! This document provides guidelines for contributing to the codebase.
+Thank you for your interest in contributing to the Self-Play Energy Forecasting & Anomaly Detection project! This document provides guidelines for contributing to the codebase.
 
 ## Development Workflow
 

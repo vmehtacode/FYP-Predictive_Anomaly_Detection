@@ -527,7 +527,7 @@ class SSENIngestor(BaseIngestor):
             raise
 
     def _read_metadata_only(self) -> Iterator[dict[str, Any]]:
-        """Read rich feeder metadata from CSV and save with comprehensive statistics.
+        """Read feeder metadata from CSV and save with statistics.
 
         This processes the enhanced SSEN dataset containing:
         - Network hierarchy (primary/secondary substations, HV/LV feeders)
@@ -583,7 +583,7 @@ class SSENIngestor(BaseIngestor):
             metadata_df["has_customer_count"] = False
             metadata_df["feeder_size_category"] = "unknown"
 
-        # Calculate and log comprehensive statistics
+        # Calculate and log statistics
         total_feeders = len(metadata_df)
 
         if "total_mpan_count" in metadata_df.columns:

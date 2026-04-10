@@ -1,24 +1,16 @@
 """Self-play reinforcement learning system for energy forecasting.
 
-This module implements a three-component self-play architecture inspired by
-Absolute Zero Reasoning (AZR) for energy consumption forecasting and anomaly
-detection.
-
 Components:
-    - ProposerAgent: Generates challenging but physically-plausible scenarios
+    - ProposerAgent: Generates challenging but realistic scenarios
     - SolverAgent: Forecasts consumption under proposed scenarios
     - VerifierAgent: Validates forecasts using physics constraints
-    - SelfPlayTrainer: Orchestrates the propose→solve→verify training loop
+    - SelfPlayTrainer: Runs the propose→solve→verify training loop
 
-BDH Enhancements (Optional, requires PyTorch):
+BDH Enhancements (Optional):
     - HebbianVerifier: Constraint adaptation via synaptic-like plasticity
     - GraphBasedProposer: Scenario sampling from causal relationship graph
-    - SparseActivationMonitor: Track activation sparsity for interpretability
+    - SparseActivationMonitor: Track activation sparsity
     - create_bdh_enhanced_trainer: Helper to create BDH-enhanced trainer
-
-References:
-    Kosowski et al. (2025). The Dragon Hatchling: The Missing Link between
-    the Transformer and Models of the Brain. arXiv:2509.26507
 """
 
 from fyp.selfplay.proposer import ProposerAgent, ScenarioProposal

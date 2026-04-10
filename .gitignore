@@ -301,7 +301,5 @@ config.local.yaml
 .env.local
 /Research
 
-# Claude Code / AI tooling
+# Planning files
 .planning/
-CLAUDE.md
-.claude/

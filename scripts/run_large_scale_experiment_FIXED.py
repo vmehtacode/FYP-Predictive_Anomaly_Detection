@@ -8,7 +8,7 @@ FIXED VERSION - Addresses 4 critical bugs:
 3. Fixes training MAE logging
 4. Implements proper early stopping
 
-This script runs comprehensive experiments comparing self-play against multiple baselines
+This script runs experiments comparing self-play against multiple baselines
 on the London Smart Meter (LCL) dataset with proper statistical validation.
 """
 

@@ -194,8 +194,8 @@ class TestMetrics:
         assert abs(mae - 0.1) < 1e-10
         assert abs(rmse - 0.1) < 1e-10
 
-    def test_forecasting_metrics_comprehensive(self):
-        """Test comprehensive forecasting metrics."""
+    def test_forecasting_metrics_all(self):
+        """Test all forecasting metrics."""
         y_true = np.array([1.0, 2.0, 3.0, 4.0])
         y_pred = np.array([1.1, 1.9, 3.1, 3.9])
         y_train = np.array([0.5, 1.5, 2.5, 3.5])

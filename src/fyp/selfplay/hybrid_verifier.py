@@ -466,14 +466,14 @@ def _combine_scores(
 
 
 # ============================================================================
-# HybridVerifierAgent (ensemble orchestrator)
+# HybridVerifierAgent (ensemble coordinator)
 # ============================================================================
 
 
 class HybridVerifierAgent:
     """Drop-in replacement for :class:`VerifierAgent` in SelfPlayTrainer.
 
-    Orchestrates the three-layer hybrid ensemble:
+    Combines the three-layer hybrid ensemble:
       1. Physics constraint layer (tolerance band scoring)
       2. Frozen GNN pattern detection (GATVerifier from Phase 1)
       3. Cascade logic (neighbor anomaly propagation)

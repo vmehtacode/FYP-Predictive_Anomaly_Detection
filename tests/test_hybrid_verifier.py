@@ -1,4 +1,4 @@
-"""Comprehensive tests for the hybrid verifier ensemble.
+"""Tests for the hybrid verifier ensemble.
 
 Tests cover:
 - HybridVerifierConfig Pydantic validation and YAML loading

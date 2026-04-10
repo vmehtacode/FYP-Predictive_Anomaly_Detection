@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 class AblationStudy:
-    """Comprehensive ablation analysis for the hybrid verifier ensemble.
+    """Ablation analysis for the hybrid verifier ensemble.
 
     Uses a VerifierBenchmark instance to generate consistent test data
     and evaluate configurations under identical conditions.
@@ -723,7 +723,7 @@ class AblationStudy:
     # ------------------------------------------------------------------
 
     def run_full_ablation(self, quick: bool = False) -> dict:
-        """Orchestrate all ablation analyses.
+        """Run all ablation analyses.
 
         Args:
             quick: If True, use quick mode for sweeps.
