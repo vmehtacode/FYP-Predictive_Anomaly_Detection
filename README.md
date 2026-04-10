@@ -24,6 +24,18 @@ The pipeline has four stages:
 
 **Hybrid ensemble** -- `HybridVerifierAgent` combines the three verification layers with configurable weights. Physics-only nodes can early-exit before GNN inference. The `CascadeLogicLayer` scores nodes based on how many of their neighbors are also flagged, distinguishing propagation events from isolated spikes. All thresholds are loaded from YAML config, not hardcoded.
 
+```mermaid
+graph LR
+    A[UK-DALE / LCL / SSEN\nRaw Datasets] --> B[BaseIngestor\n30-min Parquet]
+    B --> C[GridGraphBuilder\nSSEN Metadata]
+    C --> D[PyG Data\n44 nodes, 3 types]
+    D --> E[SyntheticAnomalyDataset\nLabelled Training Data]
+    E --> F[GNNTrainer\nBCELoss + Adam]
+    F --> G[GATVerifier\n3-layer GATv2Conv]
+    G --> H[HybridVerifierAgent\nPhysics + GNN + Cascade]
+    H --> I[Per-Node\nAnomaly Scores]
+```
+
 ## Key Results
 
 GATVerifier performance on held-out synthetic test data (500 graphs, 44 nodes each, seed=9999):
@@ -75,6 +87,26 @@ data/              DVC-tracked datasets (raw, processed, derived)
 app.py             Streamlit dashboard for interactive exploration
 docs/              Design docs, dataset notes, experiment specs
 ```
+
+The SSEN distribution network is modelled as a three-level graph:
+
+```mermaid
+graph TD
+    PS[Primary Substation\nType 0]
+    PS --> SS1[Secondary\nSubstation A\nType 1]
+    PS --> SS2[Secondary\nSubstation B\nType 1]
+    SS1 --> LV1[LV Feeder 1\nType 2]
+    SS1 --> LV2[LV Feeder 2\nType 2]
+    SS2 --> LV3[LV Feeder 3\nType 2]
+    SS2 --> LV4[LV Feeder 4\nType 2]
+
+    LV1 -.- H1[Households]
+    LV2 -.- H2[Households]
+    LV3 -.- H3[Households]
+    LV4 -.- H4[Households]
+```
+
+Edges are bidirectional in the PyG graph. The trained GNN uses 44 nodes sliced from the full 58-node SSEN graph.
 
 ## Setup and Running
 
